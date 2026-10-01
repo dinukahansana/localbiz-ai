@@ -1,19 +1,31 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import healthRouter from './routes/health.js';
 import businessProfileRouter from './routes/businessProfile.js';
 import productsRouter from './routes/products.js';
 import requireDatabase from './middleware/requireDatabase.js';
+import requireAuth from './middleware/requireAuth.js';
+import protectWrites from './middleware/protectWrites.js';
+import authRouter from './routes/auth.js';
 
 const app = express();
 app.disable('x-powered-by');
-app.use(cors({ origin: env.clientOrigins }));
+app.use(cors({ origin: env.clientOrigins, credentials: true }));
+app.use(cookieParser());
 app.use(express.json({ limit: '100kb' }));
 
 app.use('/api/health', healthRouter);
-app.use('/api/business-profile', requireDatabase, businessProfileRouter);
-app.use('/api/products', requireDatabase, productsRouter);
+app.use('/api/auth', requireDatabase, protectWrites, authRouter);
+app.use(
+  '/api/business-profile',
+  requireDatabase,
+  protectWrites,
+  requireAuth,
+  businessProfileRouter,
+);
+app.use('/api/products', requireDatabase, protectWrites, requireAuth, productsRouter);
 
 app.use((request, response) => {
   response.status(404).json({ error: 'Route not found.' });

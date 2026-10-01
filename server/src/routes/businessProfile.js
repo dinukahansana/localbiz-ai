@@ -16,7 +16,10 @@ function publicProfile(profile) {
 }
 
 router.get('/', async (request, response) => {
-  const profile = await BusinessProfile.findById('primary').lean();
+  const profile = await BusinessProfile.findOne({
+    _id: request.user._id.toString(),
+    owner: request.user._id,
+  }).lean();
   response.json({ profile: publicProfile(profile) });
 });
 
@@ -28,8 +31,8 @@ router.put('/', async (request, response) => {
       .json({ error: 'Please check the highlighted fields.', fields: errors });
   }
   const profile = await BusinessProfile.findOneAndUpdate(
-    { _id: 'primary' },
-    { $set: data },
+    { _id: request.user._id.toString(), owner: request.user._id },
+    { $set: { ...data, owner: request.user._id } },
     { upsert: true, returnDocument: 'after', runValidators: true },
   );
   response.json({ profile: publicProfile(profile) });

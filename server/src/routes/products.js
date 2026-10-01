@@ -25,12 +25,14 @@ router.param('id', (request, response, next, id) => {
 });
 
 router.get('/', async (request, response) => {
-  const products = await Product.find().sort({ createdAt: -1, _id: -1 }).lean();
+  const products = await Product.find({ owner: request.user._id })
+    .sort({ createdAt: -1, _id: -1 })
+    .lean();
   response.json({ products: products.map(publicProduct), total: products.length });
 });
 
 router.get('/:id', async (request, response) => {
-  const product = await Product.findById(request.params.id).lean();
+  const product = await Product.findOne({ _id: request.params.id, owner: request.user._id }).lean();
   if (!product) return response.status(404).json({ error: 'Product not found.' });
   response.json({ product: publicProduct(product) });
 });
@@ -42,7 +44,7 @@ router.post('/', async (request, response) => {
       .status(400)
       .json({ error: 'Please check the highlighted fields.', fields: errors });
   }
-  const product = await Product.create(data);
+  const product = await Product.create({ ...data, owner: request.user._id });
   response.status(201).json({ product: publicProduct(product) });
 });
 
@@ -54,8 +56,8 @@ router.put('/:id', async (request, response) => {
       .status(400)
       .json({ error: 'Please check the highlighted fields.', fields: errors });
   }
-  const product = await Product.findByIdAndUpdate(
-    request.params.id,
+  const product = await Product.findOneAndUpdate(
+    { _id: request.params.id, owner: request.user._id },
     { $set: data },
     {
       returnDocument: 'after',
@@ -67,7 +69,10 @@ router.put('/:id', async (request, response) => {
 });
 
 router.delete('/:id', async (request, response) => {
-  const product = await Product.findByIdAndDelete(request.params.id);
+  const product = await Product.findOneAndDelete({
+    _id: request.params.id,
+    owner: request.user._id,
+  });
   if (!product) return response.status(404).json({ error: 'Product not found.' });
   response.status(204).end();
 });

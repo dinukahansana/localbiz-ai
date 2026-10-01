@@ -10,6 +10,7 @@ import NewCampaignPage from './pages/NewCampaignPage.jsx';
 import CalendarPage from './pages/CalendarPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+import RequireAuth from './auth/RequireAuth.jsx';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -26,16 +27,18 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<AuthPage mode="login" />} />
-      <Route path="/register" element={<AuthPage mode="register" />} />
-      <Route path="/dashboard" element={<DashboardLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        <Route path="campaigns/new" element={<NewCampaignPage />} />
-        <Route path="campaigns" element={<CampaignsPage />} />
-        <Route path="calendar" element={<CalendarPage />} />
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="*" element={<NotFoundPage dashboard />} />
+      <Route path="/login" element={<AuthPage key="login" mode="login" />} />
+      <Route path="/register" element={<AuthPage key="register" mode="register" />} />
+      <Route element={<RequireAuth />}>
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="products" element={<ProductsPage />} />
+          <Route path="campaigns/new" element={<NewCampaignPage />} />
+          <Route path="campaigns" element={<CampaignsPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="*" element={<NotFoundPage dashboard />} />
+        </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

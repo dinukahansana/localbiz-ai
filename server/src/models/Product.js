@@ -4,6 +4,7 @@ export const currencies = ['LKR', 'USD', 'EUR', 'GBP', 'INR'];
 
 const productSchema = new mongoose.Schema(
   {
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true, maxlength: 100 },
     category: { type: String, trim: true, maxlength: 60, default: '' },
     description: { type: String, trim: true, maxlength: 2000, default: '' },

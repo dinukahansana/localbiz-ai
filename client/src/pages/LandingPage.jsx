@@ -82,7 +82,9 @@ export default function LandingPage() {
                 Take a look around
               </a>
             </div>
-            <p className="mt-5 text-xs text-muted">Phase 2 workspace · No account needed</p>
+            <p className="mt-5 text-xs text-muted">
+              Your own business workspace · Create an account to start
+            </p>
           </div>
           <div className="landing-illustration relative overflow-hidden rounded-[28px] bg-forest">
             <div className="absolute left-7 top-7 flex items-center gap-2 text-[10px] tracking-[.15em] text-lime">
@@ -124,7 +126,7 @@ export default function LandingPage() {
       </main>
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-7 text-xs text-muted sm:px-8">
         <span>LocalBiz AI · NextStack Studio</span>
-        <span>Built for LovHack Season 3 · Phase 2</span>
+        <span>Built for LovHack Season 3 · NextStack Studio</span>
         <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-forest">
           Make yourself at home
           <ArrowUpRight size={13} />

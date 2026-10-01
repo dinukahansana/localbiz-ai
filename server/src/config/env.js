@@ -10,6 +10,7 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 }
 
 export const env = {
+  production: process.env.NODE_ENV === 'production',
   port,
   host: process.env.HOST || 'localhost',
   clientOrigins: (process.env.CLIENT_URL || 'http://localhost:5173,http://localhost:4173')

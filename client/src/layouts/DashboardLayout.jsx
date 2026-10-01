@@ -14,10 +14,12 @@ import {
   Store,
   UserRound,
   X,
+  LogOut,
 } from 'lucide-react';
 import Brand from '../components/Brand.jsx';
 import ApiStatus from '../components/ApiStatus.jsx';
 import useResource from '../hooks/useResource.js';
+import { useAuth } from '../auth/AuthContext.js';
 
 const navigation = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -28,6 +30,9 @@ const navigation = [
 
 export default function DashboardLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const auth = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
   const profile = useResource('/business-profile');
   const products = useResource('/products');
   const { pathname } = useLocation();
@@ -40,6 +45,18 @@ export default function DashboardLayout() {
 
   function closeMenu() {
     setMenuOpen(false);
+  }
+
+  async function logout() {
+    setLoggingOut(true);
+    setLogoutError('');
+    try {
+      await auth.logout();
+    } catch (error) {
+      setLogoutError(error.message);
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -135,17 +152,31 @@ export default function DashboardLayout() {
           <div className="flex shrink-0 items-center gap-4">
             <span className="badge">
               <span className="size-1.5 rounded-full bg-sage" />
-              Phase 2 workspace
+              Business workspace
             </span>
             <Link
               to="/dashboard/profile"
               aria-label="Open business profile"
               className="hidden size-8 place-items-center rounded-full border border-line bg-canvas text-xs font-semibold sm:grid"
             >
-              LB
+              {auth.user.name.slice(0, 2).toUpperCase()}
             </Link>
+            <button
+              className="icon-button"
+              aria-label="Log out"
+              title="Log out"
+              disabled={loggingOut}
+              onClick={logout}
+            >
+              <LogOut size={17} />
+            </button>
           </div>
         </header>
+        {logoutError && (
+          <p role="alert" className="mx-5 mt-4 text-sm text-red-700">
+            {logoutError}
+          </p>
+        )}
 
         {menuOpen && (
           <nav

@@ -6,13 +6,21 @@ export async function api(path, options = {}) {
   try {
     const response = await fetch(`${baseUrl}${path}`, {
       ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers },
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-LocalBiz-Request': '1',
+        ...options.headers,
+      },
       signal: controller.signal,
     });
     const data = response.status === 204 ? null : await response.json();
     if (!response.ok) {
       const error = new Error(data?.error || 'Something went wrong. Please try again.');
       error.fields = data?.fields || {};
+      error.status = response.status;
+      if (response.status === 401 && !path.startsWith('/auth/'))
+        window.dispatchEvent(new Event('localbiz:unauthorized'));
       throw error;
     }
     return data;

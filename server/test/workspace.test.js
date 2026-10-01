@@ -24,10 +24,11 @@ test('business workspace persistence and validation', async (t) => {
   await new Promise((resolve) => server.once('listening', resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}/api`;
+  let cookie = '';
   async function request(path, method = 'GET', body) {
     const response = await fetch(`${base}${path}`, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-LocalBiz-Request': '1', Cookie: cookie },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     return {
@@ -50,6 +51,18 @@ test('business workspace persistence and validation', async (t) => {
     imageUrl: '',
   };
   let id;
+
+  const account = await fetch(`${base}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-LocalBiz-Request': '1' },
+    body: JSON.stringify({
+      name: 'Workspace Tester',
+      email: 'workspace@example.test',
+      password: 'workspace-test-password-123',
+    }),
+  });
+  assert.equal(account.status, 201);
+  cookie = account.headers.get('set-cookie').split(';')[0];
 
   await t.test('fresh database has a null profile and empty catalog', async () => {
     assert.deepEqual((await request('/business-profile')).body, { profile: null });

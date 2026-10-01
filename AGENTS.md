@@ -2,16 +2,17 @@
 
 ## Current scope
 
-This project is the Phase 2 business workspace for LovHack Season 3, by NextStack Studio.
+This project is the Phase 3 authenticated workspace for LovHack Season 3, by NextStack Studio.
 Keep the MVP focused and the JavaScript beginner-readable.
 
 - Keep the React + Vite + Tailwind frontend in `client/`.
 - Keep the Node.js + Express backend in `server/`.
 - Use npm workspaces and the root package-lock.json. Run npm install at the project root.
 - Keep the public pages and dashboard routes working on desktop and mobile.
-- Business profile persistence and product CRUD with MongoDB are authorized in Phase 2.
-- Use one shared business profile and catalog until authentication is authorized.
-- Do not add authentication, AI calls, campaign generation, scheduling persistence,
+- Registration, login, logout, protected routes, and per-account MongoDB data are authorized.
+- Scope all profile/product queries to the authenticated user; ignore form-supplied owners.
+- Keep legacy shared Phase 2 records untouched until a migration is explicitly authorized.
+- Do not add AI calls, campaign generation, scheduling persistence,
   or social integrations unless the user explicitly asks for a later phase.
 - Placeholder controls must be disabled and visibly described as coming soon.
 - Do not present invented analytics, campaigns, products, or user accounts as real data.
@@ -36,8 +37,11 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Store product prices as integer minor units and return a two-decimal price string.
 - GET /api/health reports API liveness and a separate MongoDB state.
 - Never log connection strings, credentials, or raw database connection errors.
-- No authentication exists. This is a shared local workspace; add authentication or hosting
-  access controls before exposing the mutable API publicly.
+- Hash passwords with scrypt and store only hashes of random session tokens in MongoDB.
+- Use HttpOnly cookies, production Secure cookies, checked expiry, and server-side logout revocation.
+- Protect writes with the request marker and allowed-origin check; rate-limit authentication.
+- Never log passwords or tokens, or store session credentials in localStorage.
+- Before deployment, configure HTTPS, same-site frontend/API routing, and trusted proxy behavior.
 - Tests must use a disposable MongoDB instance and never the developer's Atlas database.
 
 ## Verification

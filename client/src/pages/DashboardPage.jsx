@@ -190,7 +190,7 @@ export default function DashboardPage() {
           <strong className="font-semibold text-forest">Your business, taking shape.</strong> Save
           your profile and build your product catalog. Campaign creation is coming soon.
         </p>
-        <span className="text-[10px] font-semibold tracking-wider text-sage">PHASE 02</span>
+        <span className="text-[10px] font-semibold tracking-wider text-sage">YOUR WORKSPACE</span>
       </div>
     </>
   );

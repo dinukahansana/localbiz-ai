@@ -1,9 +1,12 @@
 # LocalBiz AI
 
-**LovHack Season 3 — Phase 2**, by **NextStack Studio**.
+**LovHack Season 3 — Phase 3**, by **NextStack Studio**.
 A responsive React workspace for local businesses, with an Express API and MongoDB persistence.
 
 ## What works
+
+- Registration, login, logout, and sessions that survive browser refresh.
+- Protected dashboard routes and separate business profiles/products for each account.
 
 - Save and edit a business name, category, location, and story.
 - Add, list, edit, and delete products with name, category, description, price, currency,
@@ -11,12 +14,39 @@ A responsive React workspace for local businesses, with an Express API and Mongo
 - Saved business name appears in the sidebar; the overview shows the real product count.
 - Loading, empty, validation, success, and retry states on the data screens.
 - Responsive dashboard navigation and a live API/database connection indicator.
-- Existing landing, login/register previews, campaigns preview, and browsable calendar.
+- Landing, working login/register screens, campaigns preview, and browsable calendar.
 
-Authentication, AI, campaign generation, scheduled posts, file uploads, and social integrations
-are later phases. This version has **one shared profile and product catalog** and no accounts.
-Keep it local until authentication or hosting access controls protect the mutable API.
-CORS only controls browser access; it is not authentication.
+AI, campaign generation, scheduled posts, file uploads, and social integrations are later phases.
+Email verification, password reset, OAuth, MFA, and account deletion are not included yet.
+
+Existing shared Phase 2 records remain unchanged in Atlas, but are hidden from new accounts
+because they have no verified owner. Registration never claims them. After creating your
+real account, authorize a deliberate migration if you want those records assigned to it.
+
+## Authentication
+
+Use `/register` to create an account with your name, email, and a **15–128 character password**.
+Emails are normalized to lowercase. Registration signs you in. Logout in the dashboard
+revokes the current session on the server.
+
+- Passwords are salted and hashed with Node scrypt (N=32768, r=8, p=3).
+- A random opaque session token is kept in an HttpOnly, SameSite=Lax cookie at `/api`.
+  MongoDB stores only its hash. Tokens/passwords are never put in localStorage.
+- Sessions expire after seven days. Requests check expiry independently of MongoDB TTL cleanup.
+- Cookies are Secure when `NODE_ENV=production`; no JWT signing secret is required.
+- Authentication POST requests allow 20 attempts per IP in 15 minutes. This MVP limiter is
+  in-process; shared rate limits and trusted proxy settings belong to deployment setup.
+- Writes require `X-LocalBiz-Request: 1` and reject unexpected browser origins. Private
+  responses are not cached. Frontend requests include credentials.
+- Every profile/product query uses the authenticated owner. Foreign IDs return 404 and
+  form-supplied owners are ignored.
+
+Deploy with HTTPS and same-site frontend/API routing, such as a frontend `/api` proxy or
+subdomains under one domain. Unrelated hosting domains need a reviewed cookie/CSRF setup;
+do not weaken the cookie or origin checks to work around that.
+
+References: [OWASP password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+and [Node crypto](https://nodejs.org/api/crypto.html).
 
 ## Start in VS Code
 
@@ -81,7 +111,7 @@ and [database/network access](https://www.mongodb.com/docs/atlas/security/quick-
 | URL                        | Behavior                                                     |
 | -------------------------- | ------------------------------------------------------------ |
 | `/`                        | Landing page                                                 |
-| `/login`, `/register`      | Disabled authentication previews                             |
+| `/login`, `/register`      | Working login and registration                               |
 | `/dashboard`               | Overview with real product count; future metrics show a dash |
 | `/dashboard/products`      | Saved catalog, add/edit dialogs, delete confirmation         |
 | `/dashboard/profile`       | Saved business details                                       |
@@ -92,18 +122,25 @@ and [database/network access](https://www.mongodb.com/docs/atlas/security/quick-
 
 ## API
 
-All paths below start with `/api`. Profile/product endpoints require a connected database.
+All paths below start with `/api`. Auth and data endpoints require a connected database;
+profile/product endpoints also require a valid session cookie.
 
 | Method | Path                | Response                                        |
 | ------ | ------------------- | ----------------------------------------------- |
 | GET    | `/health`           | API liveness, timestamp, uptime, database state |
 | GET    | `/business-profile` | `{ profile }`, initially null                   |
-| PUT    | `/business-profile` | Create/update the shared profile; `{ profile }` |
+| PUT    | `/business-profile` | Create/update your profile; `{ profile }`       |
 | GET    | `/products`         | `{ products, total }`, newest first             |
 | GET    | `/products/:id`     | `{ product }`                                   |
 | POST   | `/products`         | Created product, HTTP 201                       |
 | PUT    | `/products/:id`     | Updated product                                 |
 | DELETE | `/products/:id`     | HTTP 204, no response body                      |
+
+Auth endpoints: `POST /auth/register` (name/email/password, HTTP 201), `POST /auth/login`
+(email/password), `GET /auth/me`, and `POST /auth/logout` (HTTP 204). Registration/login/me
+return `{ user: { id, name, email } }`. All POST requests need the request marker above.
+Invalid credentials return 401, duplicate registration 409, rate limits 429, and missing
+or expired sessions 401 with `code: "UNAUTHENTICATED"`.
 
 Profile fields: `name` (required, 100 characters), `category` (required, 60),
 `location` (optional, 160), `story` (optional, 2000).
@@ -132,8 +169,9 @@ client/src/
 server/src/
   config/         Environment and MongoDB connection
   middleware/     Database availability guard
-  models/         BusinessProfile and Product schemas
-  routes/         Health, business profile, products
+  models/         User, Session, BusinessProfile, and Product schemas
+  lib/            Password hashing and session helpers
+  routes/         Health, auth, business profile, products
   validation/     Explicit form-field validation
   app.js          Express app
   index.js        Startup and graceful shutdown
@@ -164,7 +202,8 @@ npm run format:check
 ```
 
 The integration tests download a MongoDB binary on first run and start a disposable local
-database. They verify persistence, CRUD, validation, and database-unavailable responses.
+database. They verify persistence, CRUD, validation, authentication, account isolation,
+expiry, logout, origin checks, rate limiting, and database-unavailable responses.
 They do not use Atlas or the credentials in `server/.env`. Internet access is needed for
 the first binary download. Keep the disposable test helper as a development dependency.
 
@@ -183,6 +222,10 @@ Express does not serve `client/dist`; deployment is a later task.
   restoring the connection. If a request times out, refresh to check whether it saved before
   adding the same product again.
 - **Image fails to load:** the card shows a product icon. Use a publicly accessible image URL.
-- **Disabled campaign/auth control:** those features belong to a later phase.
+- **Login redirect or 401:** log in again; your session may have expired or been logged out.
+- **Too many attempts:** wait 15 minutes. Restarting the local server also clears this MVP limiter.
+- **Old Phase 2 data seems missing:** it is preserved in Atlas without an account owner;
+  authorize migration to your real account if needed.
+- **Disabled campaign control:** that feature belongs to a later phase.
 
-Keep the next phase focused and authorize it before adding accounts, AI, or integrations.
+Keep the next phase focused and authorize it before adding AI or integrations.
