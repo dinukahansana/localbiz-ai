@@ -18,7 +18,7 @@ server.on('error', (error) => {
 connectDatabase().catch(() => {
   // Connection errors can contain credentials, so do not print the raw error.
   console.error(
-    'MongoDB could not connect. Check MONGODB_URI and database access. The Phase 1 API will stay available.',
+    'MongoDB could not connect. Check MONGODB_URI and Atlas network access, then restart the server. Saving data is unavailable until connected.',
   );
 });
 

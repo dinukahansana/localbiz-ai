@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import { env } from './config/env.js';
 import healthRouter from './routes/health.js';
+import businessProfileRouter from './routes/businessProfile.js';
+import productsRouter from './routes/products.js';
+import requireDatabase from './middleware/requireDatabase.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -9,6 +12,8 @@ app.use(cors({ origin: env.clientOrigins }));
 app.use(express.json({ limit: '100kb' }));
 
 app.use('/api/health', healthRouter);
+app.use('/api/business-profile', requireDatabase, businessProfileRouter);
+app.use('/api/products', requireDatabase, productsRouter);
 
 app.use((request, response) => {
   response.status(404).json({ error: 'Route not found.' });
@@ -17,6 +22,22 @@ app.use((request, response) => {
 // Keep parser errors readable without leaking server internals.
 app.use((error, request, response, next) => {
   if (response.headersSent) return next(error);
+  if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: 'Some values are invalid. Please check your form.' });
+  }
+  if (
+    [
+      'MongoNetworkError',
+      'MongoServerSelectionError',
+      'MongooseServerSelectionError',
+      'MongoNotConnectedError',
+    ].includes(error.name)
+  ) {
+    return response.status(503).json({
+      error: 'The database connection was interrupted. Please try again.',
+      code: 'DATABASE_UNAVAILABLE',
+    });
+  }
   const status = error.status === 400 || error.status === 413 ? error.status : 500;
   const message =
     status === 400

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Brand from '../components/Brand.jsx';
 import ApiStatus from '../components/ApiStatus.jsx';
+import useResource from '../hooks/useResource.js';
 
 const navigation = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -27,6 +28,8 @@ const navigation = [
 
 export default function DashboardLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const profile = useResource('/business-profile');
+  const products = useResource('/products');
   const { pathname } = useLocation();
   const currentPage =
     [
@@ -53,8 +56,10 @@ export default function DashboardLayout() {
             <Store size={18} />
           </span>
           <div>
-            <p className="text-xs font-semibold">Your business</p>
-            <p className="mt-0.5 text-[11px] text-muted">Preview workspace</p>
+            <p className="max-w-36 truncate text-xs font-semibold">
+              {profile.data?.profile?.name || 'Your business'}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted">Business workspace</p>
           </div>
         </div>
         <div className="px-6 text-[10px] font-semibold tracking-[.16em] text-muted">WORKSPACE</div>
@@ -130,7 +135,7 @@ export default function DashboardLayout() {
           <div className="flex shrink-0 items-center gap-4">
             <span className="badge">
               <span className="size-1.5 rounded-full bg-sage" />
-              Phase 1 preview
+              Phase 2 workspace
             </span>
             <Link
               to="/dashboard/profile"
@@ -173,8 +178,12 @@ export default function DashboardLayout() {
           </nav>
         )}
 
-        <main id="main-content" className="mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-10">
-          <Outlet />
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-10"
+        >
+          <Outlet context={{ profile, products }} />
         </main>
         <footer className="mx-5 flex flex-wrap items-center justify-between gap-3 border-t border-line py-5 text-[11px] text-muted sm:mx-8 lg:mx-10">
           <span>Built for the businesses that make a neighborhood.</span>

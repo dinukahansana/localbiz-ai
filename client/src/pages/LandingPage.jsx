@@ -16,7 +16,7 @@ const features = [
     number: '01',
     icon: Package,
     title: 'Start with what you love.',
-    text: 'A future home for your products, from the everyday essentials to the local favorites.',
+    text: 'A home for your products, from the everyday essentials to the local favorites.',
   },
   {
     number: '02',
@@ -82,7 +82,7 @@ export default function LandingPage() {
                 Take a look around
               </a>
             </div>
-            <p className="mt-5 text-xs text-muted">Phase 1 preview · No account needed</p>
+            <p className="mt-5 text-xs text-muted">Phase 2 workspace · No account needed</p>
           </div>
           <div className="landing-illustration relative overflow-hidden rounded-[28px] bg-forest">
             <div className="absolute left-7 top-7 flex items-center gap-2 text-[10px] tracking-[.15em] text-lime">
@@ -124,7 +124,7 @@ export default function LandingPage() {
       </main>
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-7 text-xs text-muted sm:px-8">
         <span>LocalBiz AI · NextStack Studio</span>
-        <span>Built for LovHack Season 3 · Phase 1</span>
+        <span>Built for LovHack Season 3 · Phase 2</span>
         <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-forest">
           Make yourself at home
           <ArrowUpRight size={13} />

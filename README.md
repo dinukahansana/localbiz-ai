@@ -1,223 +1,188 @@
 # LocalBiz AI
 
-A focused **LovHack Season 3 — Phase 1** starter by **NextStack Studio**.
-LocalBiz AI is the foundation for a future workspace where local businesses can organize
-products, plan campaigns, and manage a content calendar.
+**LovHack Season 3 — Phase 2**, by **NextStack Studio**.
+A responsive React workspace for local businesses, with an Express API and MongoDB persistence.
 
-This phase contains a responsive UI shell and an Express health API. It does not implement
-authentication, MongoDB models, product storage, AI, campaign generation, scheduling, or
-social integrations.
+## What works
 
-## Requirements
+- Save and edit a business name, category, location, and story.
+- Add, list, edit, and delete products with name, category, description, price, currency,
+  and an optional public image URL. Deletion asks for confirmation.
+- Saved business name appears in the sidebar; the overview shows the real product count.
+- Loading, empty, validation, success, and retry states on the data screens.
+- Responsive dashboard navigation and a live API/database connection indicator.
+- Existing landing, login/register previews, campaigns preview, and browsable calendar.
 
-- Node.js **24 or newer** and npm (tested with Node 24).
-- MongoDB is **optional**. No database or paid API keys are needed to explore Phase 1.
+Authentication, AI, campaign generation, scheduled posts, file uploads, and social integrations
+are later phases. This version has **one shared profile and product catalog** and no accounts.
+Keep it local until authentication or hosting access controls protect the mutable API.
+CORS only controls browser access; it is not authentication.
 
-## Start locally
+## Start in VS Code
 
-Open a terminal at the project root. On Windows PowerShell:
+Open the project folder and use its integrated PowerShell terminal:
 
 ```powershell
 Set-Location 'D:\D I N U K A\Competitions\LovHack\Season 03\localbiz-ai'
 npm install
-Copy-Item client/.env.example client/.env
-Copy-Item server/.env.example server/.env
+```
+
+On first setup only, copy `client/.env.example` to `client/.env` and `server/.env.example`
+to `server/.env`. Keep existing environment files if they already exist.
+Configure Atlas below, then run:
+
+```powershell
 npm run dev
 ```
 
-Copy the environment templates only on first setup; do not overwrite your customized files.
-If PowerShell blocks npm.ps1, use `npm.cmd` in place of `npm`.
+- Frontend: http://localhost:5173
+- Dashboard: http://localhost:5173/dashboard
+- API health: http://localhost:5000/api/health
 
-On macOS/Linux, change into your copy of the project, run `npm install`, then use:
+Press **Ctrl+C** to stop both servers. Restart after changing `.env` files.
+Use Node.js **24 or newer**. If PowerShell blocks npm.ps1, use `npm.cmd`.
+The API starts without MongoDB, but profile/product requests return 503 until connected.
 
-```sh
-cp client/.env.example client/.env
-cp server/.env.example server/.env
-npm run dev
+For separate terminals, use `npm run dev:server` and `npm run dev:client` at the root.
+Avoid starting a second copy when these ports are already occupied.
+
+## MongoDB Atlas setup
+
+1. Sign up at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register).
+2. Create a project named **LocalBiz AI**, then create a **Free** cluster. Pick an available
+   region close to you. Sample data is unnecessary.
+3. Under **Database Access**, create a database user with password authentication.
+   Give it the `readWrite` role for the `localbiz_ai` database. This user is separate from
+   your Atlas website login. Save its password privately.
+4. Under **Network Access**, choose **Add IP Address → Add Current IP Address**.
+   If your internet connection changes, update this entry.
+5. On the cluster, choose **Connect → Drivers**, select **Node.js**, and copy the URI.
+6. Open `server/.env` in VS Code. Replace the username/password placeholders and put
+   `localbiz_ai` between the hostname slash and `?`:
+
+```dotenv
+MONGODB_URI=mongodb+srv://YOUR_USER:YOUR_ENCODED_PASSWORD@YOUR_CLUSTER.mongodb.net/localbiz_ai?retryWrites=true&w=majority
 ```
 
-One command starts both apps:
+The example contains placeholders, not real credentials. Percent-encode special characters in
+the password (for example `@` becomes `%40`). Keep this value only in `server/.env`;
+never put it in a `VITE_` variable or commit it. `.env` files are ignored by Git.
 
-- Frontend: **http://localhost:5173**
-- Dashboard: **http://localhost:5173/dashboard**
-- Backend health: **http://localhost:5000/api/health**
+7. Restart `npm run dev`. The backend should print **MongoDB connected.**
+8. Check `/api/health`: `database` should be `connected`.
+9. Save your profile, add a product, and refresh the browser. In Atlas's data browser,
+   the `localbiz_ai` database will contain `businessprofiles` and `products` once used.
 
-Press **Ctrl+C** to stop both. Vite reloads frontend edits; Node watch mode restarts the backend.
-Both listen on localhost by default. No database connection is attempted when MONGODB_URI is blank.
-
-Prefer separate terminals? From the root:
-
-```sh
-# Terminal 1
-npm run dev:server
-
-# Terminal 2
-npm run dev:client
-```
-
-You can also run `npm run dev` from inside either client/ or server/ after installing at the root.
-
-## What is included
-
-| Area            | Phase 1 behavior                                                              |
-| --------------- | ----------------------------------------------------------------------------- |
-| Frontend        | React, Vite, Tailwind CSS, React Router, Lucide icons                         |
-| Dashboard       | Shared sidebar, mobile menu, active navigation, responsive page layouts       |
-| Status          | Live API health indicator with retry and offline state                        |
-| Calendar        | Current month, previous/next month, and Today navigation; no stored events    |
-| Backend         | Express, CORS for configured frontend origins, JSON parsing, JSON 404/errors  |
-| MongoDB         | Optional Mongoose connection helper, status reporting, graceful disconnection |
-| Developer tools | npm workspaces, shared lockfile, ESLint, Prettier, Node HTTP tests            |
-
-All visible counts are zero for this empty workspace. Forms and future actions are disabled.
-The New campaign link opens a layout preview; it does not create a campaign. No user data is
-saved in browser storage or sent to an auth, AI, or campaign service.
+References: [Atlas connection guide](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/)
+and [database/network access](https://www.mongodb.com/docs/atlas/security/quick-start/).
 
 ## Routes
 
-| URL                        | Page                                   |
-| -------------------------- | -------------------------------------- |
-| `/`                        | Landing page                           |
-| `/login`                   | Login preview (disabled fields)        |
-| `/register`                | Registration preview (disabled fields) |
-| `/dashboard`               | Overview and workspace tour            |
-| `/dashboard/products`      | Empty product catalog                  |
-| `/dashboard/campaigns/new` | Disabled campaign builder preview      |
-| `/dashboard/campaigns`     | Empty campaign collection              |
-| `/dashboard/calendar`      | Browsable empty calendar               |
-| `/dashboard/profile`       | Disabled business profile preview      |
-| Unmatched routes           | Helpful page-not-found screen          |
+| URL                        | Behavior                                                     |
+| -------------------------- | ------------------------------------------------------------ |
+| `/`                        | Landing page                                                 |
+| `/login`, `/register`      | Disabled authentication previews                             |
+| `/dashboard`               | Overview with real product count; future metrics show a dash |
+| `/dashboard/products`      | Saved catalog, add/edit dialogs, delete confirmation         |
+| `/dashboard/profile`       | Saved business details                                       |
+| `/dashboard/campaigns/new` | Disabled campaign builder preview                            |
+| `/dashboard/campaigns`     | Campaign collection preview                                  |
+| `/dashboard/calendar`      | Browsable calendar without saved events                      |
+| Unmatched routes           | Page-not-found screen                                        |
 
-Dashboard routes are public in Phase 1. There are no route guards, sessions, tokens, or accounts.
+## API
 
-## Project structure
+All paths below start with `/api`. Profile/product endpoints require a connected database.
+
+| Method | Path                | Response                                        |
+| ------ | ------------------- | ----------------------------------------------- |
+| GET    | `/health`           | API liveness, timestamp, uptime, database state |
+| GET    | `/business-profile` | `{ profile }`, initially null                   |
+| PUT    | `/business-profile` | Create/update the shared profile; `{ profile }` |
+| GET    | `/products`         | `{ products, total }`, newest first             |
+| GET    | `/products/:id`     | `{ product }`                                   |
+| POST   | `/products`         | Created product, HTTP 201                       |
+| PUT    | `/products/:id`     | Updated product                                 |
+| DELETE | `/products/:id`     | HTTP 204, no response body                      |
+
+Profile fields: `name` (required, 100 characters), `category` (required, 60),
+`location` (optional, 160), `story` (optional, 2000).
+
+Product fields: `name` (required, 100), `category` (optional, 60),
+`description` (optional, 2000), `price` (required, 0–9,999,999.99, at most two decimals),
+`currency` (LKR/USD/EUR/GBP/INR), `imageUrl` (optional HTTP/HTTPS URL, 2048).
+The API stores integer minor units and returns `price` as a two-decimal string.
+IDs and timestamps are server-controlled. PUT replaces editable fields, so send the whole form.
+
+Validation errors return 400 with `{ error, fields }`. Invalid IDs return 400;
+missing products return 404. Database unavailability returns 503 with
+`code: "DATABASE_UNAVAILABLE"`. The health endpoint still returns 200 because it reports
+API liveness separately from database readiness. Credentials never appear in responses.
+The small MVP catalog loads all products; pagination is a future improvement.
+
+## Structure
 
 ```text
-localbiz-ai/
-├── client/
-│   ├── public/favicon.svg
-│   ├── src/
-│   │   ├── components/      # Brand, page headers, empty states, status, illustration
-│   │   ├── layouts/         # Shared dashboard navigation and frame
-│   │   ├── pages/           # One component per screen (auth previews share a component)
-│   │   ├── App.jsx          # Route definitions
-│   │   ├── index.css        # Tailwind theme, shared classes, storefront illustration
-│   │   └── main.jsx         # React entry point
-│   ├── .env.example
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.js
-├── server/
-│   ├── src/
-│   │   ├── config/env.js    # Environment loading and port validation
-│   │   ├── config/database.js
-│   │   ├── routes/health.js
-│   │   ├── app.js           # Express app; can be tested without starting MongoDB
-│   │   └── index.js         # Startup and shutdown
-│   ├── test/health.test.js
-│   ├── .env.example
-│   └── package.json
-├── .gitignore
-├── .nvmrc
-├── AGENTS.md
-├── eslint.config.js
-├── package.json
-├── package-lock.json
-└── README.md
+client/src/
+  components/     Shared UI, forms, dialogs, loading states
+  hooks/          Resource loading and retry
+  lib/api.js      API requests and readable errors
+  layouts/        Dashboard navigation and shared profile/catalog state
+  pages/          Routed screens
+server/src/
+  config/         Environment and MongoDB connection
+  middleware/     Database availability guard
+  models/         BusinessProfile and Product schemas
+  routes/         Health, business profile, products
+  validation/     Explicit form-field validation
+  app.js          Express app
+  index.js        Startup and graceful shutdown
+server/test/      HTTP and disposable MongoDB integration tests
 ```
 
-## Environment variables
+## Environment
 
-### client/.env
+| File        | Variable       | Default/purpose                               |
+| ----------- | -------------- | --------------------------------------------- |
+| client/.env | `VITE_API_URL` | `http://localhost:5000/api`                   |
+| server/.env | `NODE_ENV`     | `development`                                 |
+| server/.env | `HOST`         | `localhost`                                   |
+| server/.env | `PORT`         | `5000`                                        |
+| server/.env | `CLIENT_URL`   | `http://localhost:5173,http://localhost:4173` |
+| server/.env | `MONGODB_URI`  | Blank template; required for saved data       |
 
-| Name           | Default                     | Purpose                        |
-| -------------- | --------------------------- | ------------------------------ |
-| `VITE_API_URL` | `http://localhost:5000/api` | API base URL, including `/api` |
+For your own local MongoDB instance, use `mongodb://127.0.0.1:27017/localbiz_ai`.
+Never put secrets in the frontend. Restart both apps after environment changes.
 
-Vite exposes VITE_ variables to the browser and embeds them at build time. Never put passwords,
-MongoDB URIs, or secret keys in client/.env. Restart Vite after changing this file.
-
-### server/.env
-
-| Name          | Default                                       | Purpose                                             |
-| ------------- | --------------------------------------------- | --------------------------------------------------- |
-| `NODE_ENV`    | `development` in template                     | Standard runtime mode                               |
-| `HOST`        | `localhost`                                   | Bind address; configure explicitly if hosting later |
-| `PORT`        | `5000`                                        | API port                                            |
-| `CLIENT_URL`  | `http://localhost:5173,http://localhost:4173` | Comma-separated allowed browser origins             |
-| `MONGODB_URI` | blank                                         | Optional MongoDB connection string                  |
-
-For local MongoDB, start your own MongoDB instance and set:
-
-```dotenv
-MONGODB_URI=mongodb://127.0.0.1:27017/localbiz_ai
-```
-
-For MongoDB Atlas, put your own connection string in server/.env and configure the database
-user and network access in Atlas. No collections or models are created by this starter.
-Restart the backend after editing server/.env. Node watch mode tracks source imports, not .env changes.
-
-When a configured connection fails, the API remains available and reports the database as
-disconnected. The health endpoint is **API liveness**, not a database readiness check.
-
-## Health endpoint
-
-`GET /api/health` returns HTTP 200 while the API is running:
-
-```json
-{
-  "status": "ok",
-  "service": "localbiz-ai-api",
-  "timestamp": "2026-09-30T00:00:00.000Z",
-  "uptimeSeconds": 12,
-  "database": "not_configured"
-}
-```
-
-The timestamp and uptime are live values. Database status can be not_configured, disconnected,
-connected, connecting, or disconnecting. No credentials appear in the response.
-
-To check it in PowerShell:
-
-```powershell
-Invoke-RestMethod http://localhost:5000/api/health
-```
-
-## Checks and useful commands
+## Checks
 
 ```sh
-npm run lint          # ESLint across client and server
-npm test              # Real HTTP tests: health, CORS, 404, malformed JSON
-npm run build         # Production frontend build -> client/dist
-npm run preview       # Preview the frontend build on http://localhost:4173
-npm start             # Run only the backend without watch mode
-npm run format        # Format source and docs
-npm run format:check  # Check formatting without changing files
+npm run lint
+npm test
+npm run build
+npm run format:check
 ```
 
-The tests use a temporary local HTTP port and never connect to MongoDB.
-Run the backend separately when using the production frontend preview.
-The backend does not serve client/dist; deploying these apps is a later task.
-Any future frontend host must route client URLs back to index.html for React Router deep links.
+The integration tests download a MongoDB binary on first run and start a disposable local
+database. They verify persistence, CRUD, validation, and database-unavailable responses.
+They do not use Atlas or the credentials in `server/.env`. Internet access is needed for
+the first binary download. Keep the disposable test helper as a development dependency.
+
+Other commands: `npm run format`, `npm run preview` (frontend build on port 4173),
+and `npm start` (backend without watch mode). Run the backend separately for frontend preview.
+Express does not serve `client/dist`; deployment is a later task.
 
 ## Troubleshooting
 
-- **Port already in use:** stop the previous process with Ctrl+C. Vite uses strictPort so it
-  does not silently switch addresses. To change the backend port, update server/.env and
-  VITE_API_URL in client/.env together, then restart both apps.
-- **Server unavailable in the sidebar:** start the backend, open /api/health, verify
-  VITE_API_URL and CLIENT_URL match the addresses you use, then click the refresh icon.
-- **MongoDB connection failed:** leave MONGODB_URI blank for Phase 1, or verify your
-  database is running and its credentials/network settings are correct.
-- **A button is disabled:** that feature is intentionally reserved for a later phase.
+- **Port already in use:** stop the old server in its terminal with Ctrl+C, then start one copy.
+  Vite uses strictPort. If changing the backend port, update `VITE_API_URL` too.
+- **Database unavailable:** check the Atlas cluster, database user's password/role, current IP
+  entry, and URI. Restart the backend after fixing `server/.env`, then retry on the page.
+- **Server unavailable:** check the backend, frontend API URL, and configured browser origins.
+- **Save fails:** the form keeps your entries. Correct highlighted fields or retry after
+  restoring the connection. If a request times out, refresh to check whether it saved before
+  adding the same product again.
+- **Image fails to load:** the card shows a product icon. Use a publicly accessible image URL.
+- **Disabled campaign/auth control:** those features belong to a later phase.
 
-## Scope for the next phase
-
-Discuss and authorize the next phase before adding functionality. Authentication, database
-models, product CRUD, AI providers, campaign generation, and social integrations are all out
-of scope for this foundation.
-
-Setup references: [Vite](https://vite.dev/guide/),
-[Tailwind with Vite](https://tailwindcss.com/docs/installation/using-vite),
-[React Router](https://reactrouter.com/start/declarative/installation),
-and [Express](https://expressjs.com/en/starter/installing/).
+Keep the next phase focused and authorize it before adding accounts, AI, or integrations.

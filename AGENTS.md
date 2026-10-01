@@ -2,15 +2,17 @@
 
 ## Current scope
 
-This project is the Phase 1 foundation for LovHack Season 3, by NextStack Studio.
+This project is the Phase 2 business workspace for LovHack Season 3, by NextStack Studio.
 Keep the MVP focused and the JavaScript beginner-readable.
 
 - Keep the React + Vite + Tailwind frontend in `client/`.
 - Keep the Node.js + Express backend in `server/`.
 - Use npm workspaces and the root package-lock.json. Run npm install at the project root.
 - Keep the public pages and dashboard routes working on desktop and mobile.
-- Do not add authentication, database models, AI calls, campaign generation, product CRUD,
-  persistence, or social integrations unless the user explicitly asks for a later phase.
+- Business profile persistence and product CRUD with MongoDB are authorized in Phase 2.
+- Use one shared business profile and catalog until authentication is authorized.
+- Do not add authentication, AI calls, campaign generation, scheduling persistence,
+  or social integrations unless the user explicitly asks for a later phase.
 - Placeholder controls must be disabled and visibly described as coming soon.
 - Do not present invented analytics, campaigns, products, or user accounts as real data.
 
@@ -29,10 +31,14 @@ Keep the MVP focused and the JavaScript beginner-readable.
 
 - Keep secrets in server/.env; never put secrets in VITE_ variables.
 - Update .env.example files and README when configuration changes.
-- MongoDB remains optional for Phase 1. The API must start with a blank MONGODB_URI.
+- The API must start with a blank MONGODB_URI, but data routes must return 503 without a database.
+- Pick explicit request fields, validate them, and keep IDs/timestamps server-controlled.
+- Store product prices as integer minor units and return a two-decimal price string.
 - GET /api/health reports API liveness and a separate MongoDB state.
 - Never log connection strings, credentials, or raw database connection errors.
-- No authentication exists. Dashboard pages are deliberately public previews.
+- No authentication exists. This is a shared local workspace; add authentication or hosting
+  access controls before exposing the mutable API publicly.
+- Tests must use a disposable MongoDB instance and never the developer's Atlas database.
 
 ## Verification
 

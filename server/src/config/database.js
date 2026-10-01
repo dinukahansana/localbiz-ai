@@ -3,11 +3,13 @@ import { env } from './env.js';
 
 export async function connectDatabase() {
   if (!env.mongoUri) {
-    console.info('MongoDB is not configured. Running the Phase 1 shell without a database.');
+    console.info(
+      'MongoDB is not configured. Set MONGODB_URI in server/.env to save profiles and products.',
+    );
     return;
   }
 
-  await mongoose.connect(env.mongoUri, { serverSelectionTimeoutMS: 5000 });
+  await mongoose.connect(env.mongoUri, { serverSelectionTimeoutMS: 5000, socketTimeoutMS: 10000 });
   console.info('MongoDB connected.');
 }
 

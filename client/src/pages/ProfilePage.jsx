@@ -1,72 +1,131 @@
+import { useState } from 'react';
+import { useOutletContext } from 'react-router';
 import { Store } from 'lucide-react';
 import PageHeader from '../components/PageHeader.jsx';
-import PhaseNotice from '../components/PhaseNotice.jsx';
+import LoadState from '../components/LoadState.jsx';
+import FormField from '../components/FormField.jsx';
+import { api } from '../lib/api.js';
+
+const emptyProfile = { name: '', category: '', location: '', story: '' };
+
+function ProfileForm({ profile, onSaved }) {
+  const [form, setForm] = useState(profile || emptyProfile);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [fields, setFields] = useState({});
+  const [saved, setSaved] = useState(false);
+  function change(name, value) {
+    setForm((current) => ({ ...current, [name]: value }));
+    setFields((current) => ({ ...current, [name]: '' }));
+    setSaved(false);
+  }
+  async function save(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    setFields({});
+    setSaved(false);
+    try {
+      const data = await api('/business-profile', { method: 'PUT', body: JSON.stringify(form) });
+      setForm(data.profile);
+      onSaved(data);
+      setSaved(true);
+    } catch (failure) {
+      setError(failure.message);
+      setFields(failure.fields || {});
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <form onSubmit={save} className="panel p-6">
+      <h2 className="mb-6 font-semibold">Your business details</h2>
+      <p className="mb-5 text-xs text-muted">Business name and category are required.</p>
+      <fieldset disabled={busy} className="space-y-5">
+        <legend className="sr-only">Business details</legend>
+        <FormField
+          name="name"
+          label="Business name"
+          value={form.name}
+          onChange={change}
+          error={fields.name}
+          required
+          maxLength={100}
+          autoComplete="organization"
+        />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FormField
+            name="category"
+            label="Category"
+            value={form.category}
+            onChange={change}
+            error={fields.category}
+            required
+            maxLength={60}
+            placeholder="e.g. Bakery"
+          />
+          <FormField
+            name="location"
+            label="Location"
+            value={form.location}
+            onChange={change}
+            error={fields.location}
+            maxLength={160}
+            placeholder="Your town or city"
+          />
+        </div>
+        <FormField
+          name="story"
+          label="Your story"
+          value={form.story}
+          onChange={change}
+          error={fields.story}
+          multiline
+          maxLength={2000}
+          placeholder="What makes your business special?"
+        />
+        {error && (
+          <p role="alert" className="text-sm text-red-700">
+            {error}
+          </p>
+        )}
+        {saved && (
+          <p role="status" className="text-sm text-forest">
+            Business profile saved.
+          </p>
+        )}
+        <button className="button-primary" type="submit">
+          {busy ? 'Saving…' : 'Save business profile'}
+        </button>
+      </fieldset>
+    </form>
+  );
+}
 
 export default function ProfilePage() {
+  const { profile } = useOutletContext();
   return (
     <>
       <PageHeader
         eyebrow="THE PEOPLE BEHIND THE PRODUCTS"
         title="Business profile"
-        description="Every local business has a story. This is where yours will live."
+        description="Tell your business story and keep your details in one place."
       />
       <div className="grid items-start gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <section className="panel p-6">
-          <div className="mb-7 flex items-center gap-4 border-b border-line pb-6">
-            <span className="grid size-14 place-items-center rounded-2xl bg-[#eef2e9] text-sage">
-              <Store size={25} strokeWidth={1.5} />
-            </span>
-            <div>
-              <h2 className="font-semibold">Your business details</h2>
-              <p className="mt-1 text-xs text-muted">Profile editing is coming soon.</p>
-            </div>
-          </div>
-          <fieldset disabled className="space-y-5">
-            <legend className="sr-only">Business profile — preview only</legend>
-            <label className="field-label" htmlFor="business-name">
-              Business name
-              <input id="business-name" className="field mt-2" placeholder="Your business name" />
-            </label>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <label className="field-label" htmlFor="business-category">
-                Category
-                <select id="business-category" defaultValue="" className="field mt-2">
-                  <option value="">Choose a category</option>
-                </select>
-              </label>
-              <label className="field-label" htmlFor="business-location">
-                Location
-                <input
-                  id="business-location"
-                  className="field mt-2"
-                  placeholder="Your town or city"
-                />
-              </label>
-            </div>
-            <label className="field-label" htmlFor="business-story">
-              Your story
-              <textarea
-                id="business-story"
-                className="field mt-2 min-h-28 resize-none"
-                placeholder="What makes your business a neighborhood favorite?"
-              />
-            </label>
-            <button className="button-primary">Save changes · Coming soon</button>
-          </fieldset>
-        </section>
-        <div className="space-y-5">
-          <div className="rounded-2xl bg-forest p-7 text-white">
-            <Store className="mb-5 text-lime" size={28} strokeWidth={1.4} />
-            <h2 className="display-heading text-3xl leading-tight">
-              A business with
-              <br />a little more you.
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-[#c4d4cc]">
-              Your voice, your neighborhood, your special something. These details will help shape
-              future campaigns.
-            </p>
-          </div>
-          <PhaseNotice>No business or account information is saved in this phase.</PhaseNotice>
+        <div>
+          <LoadState resource={profile} label="your business profile" />
+          {profile.data && <ProfileForm profile={profile.data.profile} onSaved={profile.replace} />}
+        </div>
+        <div className="rounded-2xl bg-forest p-7 text-white">
+          <Store className="mb-5 text-lime" size={28} />
+          <h2 className="display-heading text-3xl leading-tight">
+            A business with
+            <br />a little more you.
+          </h2>
+          <p className="mt-4 text-sm leading-6 text-[#c4d4cc]">
+            Your voice, your neighborhood, your special something. These details will help shape
+            future campaigns.
+          </p>
         </div>
       </div>
     </>

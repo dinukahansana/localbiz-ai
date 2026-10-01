@@ -3,7 +3,7 @@ import { getDatabaseStatus } from '../config/database.js';
 
 const router = Router();
 
-// Liveness only: MongoDB is optional in Phase 1 and reported separately.
+// API liveness only: database readiness is reported separately.
 router.get('/', (request, response) => {
   response.set('Cache-Control', 'no-store').json({
     status: 'ok',

@@ -89,7 +89,7 @@
     @apply block text-xs font-medium text-ink;
   }
   .field {
-    @apply block w-full rounded-lg border border-line bg-canvas px-3 py-3 text-sm font-normal text-muted placeholder:text-stone-400;
+    @apply block w-full rounded-lg border border-line bg-canvas px-3 py-3 text-sm font-normal text-ink placeholder:text-stone-400;
   }
   .skip-link {
     @apply fixed left-4 top-4 z-50 -translate-y-24 rounded-lg bg-forest px-4 py-3 text-sm text-white focus:translate-y-0;

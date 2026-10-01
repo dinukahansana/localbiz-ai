@@ -19,7 +19,7 @@ export default function ApiStatus() {
         const data = await response.json();
         if (!response.ok || data.status !== 'ok' || data.service !== 'localbiz-ai-api')
           throw new Error('API unavailable');
-        if (mounted) setStatus('online');
+        if (mounted) setStatus(data.database === 'connected' ? 'online' : 'databaseOffline');
       } catch {
         if (mounted) setStatus('offline');
       } finally {
@@ -39,12 +39,13 @@ export default function ApiStatus() {
     checking: 'Checking connection',
     online: 'Server connected',
     offline: 'Server unavailable',
+    databaseOffline: 'Database unavailable',
   };
   return (
     <div className="flex items-center justify-between gap-2 text-xs text-muted">
       <span className="flex items-center gap-2" role="status">
         <span
-          className={`size-1.5 rounded-full ${status === 'online' ? 'bg-sage' : status === 'offline' ? 'bg-amber-600' : 'bg-stone-400'}`}
+          className={`size-1.5 rounded-full ${status === 'online' ? 'bg-sage' : status === 'checking' ? 'bg-stone-400' : 'bg-amber-600'}`}
         />
         {labels[status]}
       </span>

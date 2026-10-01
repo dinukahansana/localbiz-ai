@@ -103,7 +103,9 @@ export default function AuthPage({ mode }) {
             </Link>
           </p>
         </div>
-        <p className="text-center text-[11px] text-muted">LovHack Season 3 · Phase 1 foundation</p>
+        <p className="text-center text-[11px] text-muted">
+          LovHack Season 3 · Authentication coming soon
+        </p>
       </main>
     </div>
   );

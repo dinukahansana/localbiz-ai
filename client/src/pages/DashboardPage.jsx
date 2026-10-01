@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, useOutletContext } from 'react-router';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -43,14 +43,14 @@ const steps = [
     number: '01',
     icon: Store,
     title: 'Make yourself at home',
-    description: 'Take a look at your business profile.',
+    description: 'Save your business name, category, and story.',
     to: '/dashboard/profile',
   },
   {
     number: '02',
     icon: Package,
     title: 'Give your products a place',
-    description: 'Explore your future product catalog.',
+    description: 'Add your products, prices, and details.',
     to: '/dashboard/products',
   },
   {
@@ -63,6 +63,7 @@ const steps = [
 ];
 
 export default function DashboardPage() {
+  const { products } = useOutletContext();
   return (
     <>
       <PageHeader
@@ -115,9 +116,19 @@ export default function DashboardPage() {
                 <Icon size={18} strokeWidth={1.6} />
               </span>
             </div>
-            <p className="mt-2 text-[32px] font-medium leading-none tracking-tight">0</p>
+            <p className="mt-2 text-[32px] font-medium leading-none tracking-tight">
+              {label === 'Products' ? (products.data?.total ?? '—') : '—'}
+            </p>
             <div className="mt-4 flex items-center justify-between gap-2">
-              <p className="text-[11px] text-muted">{note}</p>
+              <p className="text-[11px] text-muted">
+                {label === 'Products'
+                  ? products.loading
+                    ? 'Loading catalog…'
+                    : products.error
+                      ? 'Catalog unavailable'
+                      : note
+                  : 'Coming soon'}
+              </p>
               <ArrowUpRight className="text-stone-400 group-hover:text-sage" size={14} />
             </div>
           </Link>
@@ -176,10 +187,10 @@ export default function DashboardPage() {
           <Check size={15} />
         </span>
         <p className="flex-1 leading-5 text-muted">
-          <strong className="font-semibold text-forest">The foundation is ready.</strong> Explore
-          the workspace. Product uploads and campaign creation are coming in a future phase.
+          <strong className="font-semibold text-forest">Your business, taking shape.</strong> Save
+          your profile and build your product catalog. Campaign creation is coming soon.
         </p>
-        <span className="text-[10px] font-semibold tracking-wider text-sage">PHASE 01</span>
+        <span className="text-[10px] font-semibold tracking-wider text-sage">PHASE 02</span>
       </div>
     </>
   );
