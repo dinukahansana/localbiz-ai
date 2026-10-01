@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import PageHeader from '../components/PageHeader.jsx';
 import LoadState from '../components/LoadState.jsx';
 import CampaignEditor from '../components/CampaignEditor.jsx';
+import PosterStudio from '../components/PosterStudio.jsx';
 import useResource from '../hooks/useResource.js';
 import { api } from '../lib/api.js';
 
@@ -97,6 +98,7 @@ export default function CampaignDetailPage() {
           </section>
         </div>
       )}
+      {campaign && <PosterStudio campaign={campaign} />}
     </>
   );
 }

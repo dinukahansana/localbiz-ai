@@ -10,12 +10,22 @@ import requireAuth from './middleware/requireAuth.js';
 import protectWrites from './middleware/protectWrites.js';
 import authRouter from './routes/auth.js';
 import createCampaignRouter from './routes/campaigns.js';
+import createPosterRouter from './routes/campaignPosters.js';
 
 export function createApp({ generateCampaign } = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.use(cors({ origin: env.clientOrigins, credentials: true }));
   app.use(cookieParser());
+  // Only authenticated poster uploads need the larger body limit.
+  app.use(
+    '/api/campaign-posters',
+    requireDatabase,
+    protectWrites,
+    requireAuth,
+    express.json({ limit: '9mb' }),
+    createPosterRouter(),
+  );
   app.use(express.json({ limit: '100kb' }));
 
   app.use('/api/health', healthRouter);

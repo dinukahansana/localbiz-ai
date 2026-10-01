@@ -1,7 +1,11 @@
 const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
 
+export function apiUrl(path) {
+  return `${baseUrl}${path}`;
+}
+
 export async function api(path, options = {}) {
-  const { timeoutMs = 15000, ...requestOptions } = options;
+  const { timeoutMs = 15000, responseType = 'json', ...requestOptions } = options;
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -15,7 +19,12 @@ export async function api(path, options = {}) {
       },
       signal: controller.signal,
     });
-    const data = response.status === 204 ? null : await response.json();
+    const data =
+      response.status === 204
+        ? null
+        : response.ok && responseType === 'blob'
+          ? await response.blob()
+          : await response.json();
     if (!response.ok) {
       const error = new Error(data?.error || 'Something went wrong. Please try again.');
       error.fields = data?.fields || {};

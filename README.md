@@ -1,6 +1,6 @@
 # LocalBiz AI
 
-**LovHack Season 3 — Phase 4**, by **NextStack Studio**.
+**LovHack Season 3 — Phase 5**, by **NextStack Studio**.
 A responsive React workspace for local businesses, with an Express API and MongoDB persistence.
 
 ## What works
@@ -19,9 +19,10 @@ A responsive React workspace for local businesses, with an Express API and Mongo
 - Review and edit captions, hashtags, calls to action, and practical photo ideas; copy post text.
 - Save, reopen, edit, and delete account-private campaign drafts in MongoDB.
 - Overview shows the real draft count and recent saved campaigns.
+- Create free branded photo posters for saved campaign posts; preview, save, reopen, and download PNGs.
 - Landing, working login/register screens, and browsable calendar.
 
-Scheduled posts, generated images, file uploads, and social integrations are later phases.
+Paid AI image generation, scheduled posts, and social integrations are later phases.
 Email verification, password reset, OAuth, MFA, and account deletion are not included yet.
 
 Existing shared Phase 2 records remain unchanged in Atlas, but are hidden from new accounts
@@ -139,13 +140,39 @@ These in-memory safeguards reset on restart; shared limits are needed for multip
 Free Tier provider quotas are separate and can change; check AI Studio for your actual limits.
 
 Captions, hashtags, calls to action, and photo suggestions are draft text. Review claims and
-language quality before sharing. No images are generated and no posts are scheduled/published.
+language quality before sharing. Photo posters use the separate free builder below; no posts are scheduled/published.
 Saved drafts keep product/business names even after their source records change or are removed.
 Editing a saved draft changes its title/posts; its original product and brief stay unchanged.
 
 References: [Gemini API keys](https://ai.google.dev/gemini-api/docs/api-key),
 [generation API](https://ai.google.dev/api/generate-content), and
 [structured outputs](https://ai.google.dev/gemini-api/docs/structured-output).
+
+## Create free product-photo posters (Phase 5)
+
+No additional API key, paid billing, or environment variables are needed. This feature uses a
+browser canvas template and your real product photo; it does not generate AI artwork.
+
+1. Open a saved draft under **Campaigns** and scroll to **Give your posts a picture**.
+2. Expand a post and upload its product photo (JPG, PNG, or WebP; up to 5 MB and 20 million pixels).
+3. Edit the poster headline and call to action, then choose a brand color.
+4. Click **Create poster preview**. Review the center crop and wording. Creating a preview never saves it.
+5. **Download PNG** exports a 1080 × 1080 image, even before saving.
+6. **Save poster** attaches it to that campaign post. Each of the three posts holds one poster;
+   **Replace saved poster** replaces that post's existing image. Errors keep the preview available.
+7. Refresh or reopen the campaign to view/download its saved posters. Upload the original photo
+   again if you want to rebuild it. Text edits never automatically rewrite a saved poster.
+
+The original photo stays in the browser. Only a saved poster is uploaded to the backend, decoded
+with Sharp, stripped of metadata, and stored privately in the `campaignposters` MongoDB collection.
+Saved images must be valid 1080 × 1080 PNGs no larger than 6 MB. Image downloads require the owner's
+session cookie and are not publicly hosted. Campaign lists contain no image bytes; deleting a
+campaign also removes its posters. Product deletion does not remove a saved campaign's posters.
+
+Saving allows 30 attempts per account per 15 minutes; this in-memory limit resets on server restart.
+The poster endpoints alone accept larger JSON bodies, after checking login. No Google API calls
+are made for posters. Storage is deliberately simple for the LovHack MVP; object storage and
+account-wide storage quotas can be added before a wider public launch.
 
 ## Routes
 
@@ -158,7 +185,7 @@ References: [Gemini API keys](https://ai.google.dev/gemini-api/docs/api-key),
 | `/dashboard/profile`       | Saved business details                                       |
 | `/dashboard/campaigns/new` | AI generation and editable draft builder                     |
 | `/dashboard/campaigns`     | Private saved drafts, open/edit and delete                   |
-| `/dashboard/campaigns/:id` | View, edit, save, and copy a campaign draft                  |
+| `/dashboard/campaigns/:id` | Edit/copy a draft; create, save, and download photo posters  |
 | `/dashboard/calendar`      | Browsable calendar without saved events                      |
 | Unmatched routes           | Page-not-found screen                                        |
 
@@ -206,6 +233,19 @@ Foreign campaign/product IDs return 404; a missing profile returns 409 before ge
 Generation errors use readable messages and codes: `AI_NOT_CONFIGURED`/`AI_CONFIGURATION_ERROR`
 (503), `AI_QUOTA_EXCEEDED`/`GENERATION_RATE_LIMITED` (429), `GENERATION_IN_PROGRESS` (409),
 `AI_BLOCKED` (422), `AI_INVALID_RESPONSE` (502), `AI_UNAVAILABLE` (503), `AI_TIMEOUT` (504).
+
+Poster endpoints (authenticated, database required):
+
+| Method | Path                                       | Behavior                              |
+| ------ | ------------------------------------------ | ------------------------------------- |
+| GET    | `/campaign-posters/:campaignId`            | `{ posters }`, metadata only          |
+| GET    | `/campaign-posters/:campaignId/:postIndex` | Private `image/png` bytes, no caching |
+| PUT    | `/campaign-posters/:campaignId/:postIndex` | Save/replace one poster; `{ poster }` |
+
+`postIndex` is 0, 1, or 2. Save fields: `headline` (1–90 characters), `callToAction` (1–80),
+`brandColor` (six-digit hex, e.g. `#245b46`), and `image` (PNG base64 data URL, max 6 MB decoded).
+Unknown fields, ownership, IDs, and timestamps are ignored. Foreign/missing campaigns return 404;
+invalid IDs/indexes/images return 400. Oversized JSON returns 413; poster saves can return 429.
 
 Profile fields: `name` (required, 100 characters), `category` (required, 60),
 `location` (optional, 160), `story` (optional, 2000).
@@ -301,5 +341,8 @@ Express does not serve `client/dist`; deployment is a later task.
   repeatedly does not restore quota. Provider limits are separate from the app's request limit.
 - **Gemini configuration error:** verify the key's Gemini API access and configured model.
 - **Draft not in Campaigns:** generation is a preview; click Save campaign draft first.
+- **Poster preview button disabled:** upload a supported product photo first.
+- **Poster shows old wording:** edit its headline/call to action, create a fresh preview, then replace it.
+- **Poster save fails:** keep the preview, restore the connection, and retry; download still works locally.
 
 Keep the next phase focused and authorize it before adding AI or integrations.

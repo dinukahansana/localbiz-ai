@@ -2,7 +2,7 @@
 
 ## Current scope
 
-This project is the Phase 4 AI campaign workspace for LovHack Season 3, by NextStack Studio.
+This project is the Phase 5 campaign and photo-poster workspace for LovHack Season 3, by NextStack Studio.
 Keep the MVP focused and the JavaScript beginner-readable.
 
 - Keep the React + Vite + Tailwind frontend in `client/`.
@@ -15,7 +15,10 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Gemini campaign generation, editable saved drafts, and per-account campaign CRUD are authorized.
 - Keep generation separate from saving. Validate AI output and protect quota with limits.
 - Send only the authenticated business profile, selected product facts, and campaign brief to Gemini.
-- Do not add scheduling persistence, image generation, or social integrations without later authorization.
+- Free branded posters from user-uploaded product photos, private poster storage, and PNG downloads are authorized.
+- Keep poster previews separate from saving. Never fetch arbitrary image URLs on the server.
+- Decode and validate saved PNGs; keep image bytes out of campaign lists and scope access to owners.
+- Do not add paid AI image generation, scheduling persistence, or social integrations without later authorization.
 - Placeholder controls must be disabled and visibly described as coming soon.
 - Do not present invented analytics, campaigns, products, or user accounts as real data.
 

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import Campaign from '../models/Campaign.js';
+import CampaignPoster from '../models/CampaignPoster.js';
 import Product from '../models/Product.js';
 import BusinessProfile from '../models/BusinessProfile.js';
 import { validateBrief, validateContent } from '../validation/campaigns.js';
@@ -149,6 +150,7 @@ export default function createCampaignRouter(generate = generateCampaign) {
       owner: request.user._id,
     });
     if (!campaign) return response.status(404).json({ error: 'Campaign not found.' });
+    await CampaignPoster.deleteMany({ campaign: campaign._id, owner: request.user._id });
     response.status(204).end();
   });
   return router;

@@ -10,11 +10,12 @@
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",
-    "express-rate-limit": "^8.2.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "mongoose": "^9.10.3"
+    "express-rate-limit": "^8.2.1",
+    "mongoose": "^9.10.3",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "mongodb-memory-server-core": "^11.3.0"
