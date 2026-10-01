@@ -1,6 +1,6 @@
 # LocalBiz AI
 
-**LovHack Season 3 — Phase 3**, by **NextStack Studio**.
+**LovHack Season 3 — Phase 4**, by **NextStack Studio**.
 A responsive React workspace for local businesses, with an Express API and MongoDB persistence.
 
 ## What works
@@ -14,9 +14,14 @@ A responsive React workspace for local businesses, with an Express API and Mongo
 - Saved business name appears in the sidebar; the overview shows the real product count.
 - Loading, empty, validation, success, and retry states on the data screens.
 - Responsive dashboard navigation and a live API/database connection indicator.
-- Landing, working login/register screens, campaigns preview, and browsable calendar.
+- Generate three editable social post ideas from your profile and a selected product with Gemini.
+- Choose Facebook/Instagram, tone, audience, and English/Sinhala/Tamil.
+- Review and edit captions, hashtags, calls to action, and practical photo ideas; copy post text.
+- Save, reopen, edit, and delete account-private campaign drafts in MongoDB.
+- Overview shows the real draft count and recent saved campaigns.
+- Landing, working login/register screens, and browsable calendar.
 
-AI, campaign generation, scheduled posts, file uploads, and social integrations are later phases.
+Scheduled posts, generated images, file uploads, and social integrations are later phases.
 Email verification, password reset, OAuth, MFA, and account deletion are not included yet.
 
 Existing shared Phase 2 records remain unchanged in Atlas, but are hidden from new accounts
@@ -106,6 +111,42 @@ never put it in a `VITE_` variable or commit it. `.env` files are ignored by Git
 References: [Atlas connection guide](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/)
 and [database/network access](https://www.mongodb.com/docs/atlas/security/quick-start/).
 
+## Generate a campaign (Phase 4)
+
+1. In [Google AI Studio](https://aistudio.google.com/api-keys), create a Gemini key.
+   Keep it on a Free Tier project for MVP testing; account quotas still apply.
+2. Add `GEMINI_API_KEY=your_key_here` to `server/.env`. The default model is
+   `gemini-3.1-flash-lite`; optionally set `GEMINI_MODEL` to another compatible Gemini 3 Flash model.
+   Keys stay on the backend and never belong in `VITE_` variables or Git.
+3. Restart the backend from its VS Code terminal. Run only one copy of `npm run dev`.
+4. Log in, save your business profile, and add at least one product to your account.
+5. Open **New campaign**. Choose the product, goal, audience, platform, tone and language.
+6. Click **Generate campaign**, then review/edit the three post ideas and click
+   **Save campaign draft**. Generation alone does not save or publish anything.
+7. Reopen drafts under **Campaigns**, edit/save changes, copy post text, or delete with confirmation.
+
+Only your business name/category/location/story, the selected product's name/category/
+description/price/currency, and the brief are sent to Google. Product images, account emails,
+passwords, session tokens, and other accounts' data are not sent. Google may use Free Tier
+inputs/outputs to improve its products; use public business information for the demo.
+See [Gemini pricing/data use](https://ai.google.dev/gemini-api/docs/pricing).
+
+The backend uses Node's built-in fetch and Gemini's JSON response schema, then validates all
+output again. It never displays raw provider errors or fabricates fallback AI results.
+Generation times out after 45 seconds; the browser allows 60 seconds for that request.
+Each account can make five generation attempts per ten minutes, with one call at a time.
+These in-memory safeguards reset on restart; shared limits are needed for multiple API instances.
+Free Tier provider quotas are separate and can change; check AI Studio for your actual limits.
+
+Captions, hashtags, calls to action, and photo suggestions are draft text. Review claims and
+language quality before sharing. No images are generated and no posts are scheduled/published.
+Saved drafts keep product/business names even after their source records change or are removed.
+Editing a saved draft changes its title/posts; its original product and brief stay unchanged.
+
+References: [Gemini API keys](https://ai.google.dev/gemini-api/docs/api-key),
+[generation API](https://ai.google.dev/api/generate-content), and
+[structured outputs](https://ai.google.dev/gemini-api/docs/structured-output).
+
 ## Routes
 
 | URL                        | Behavior                                                     |
@@ -115,8 +156,9 @@ and [database/network access](https://www.mongodb.com/docs/atlas/security/quick-
 | `/dashboard`               | Overview with real product count; future metrics show a dash |
 | `/dashboard/products`      | Saved catalog, add/edit dialogs, delete confirmation         |
 | `/dashboard/profile`       | Saved business details                                       |
-| `/dashboard/campaigns/new` | Disabled campaign builder preview                            |
-| `/dashboard/campaigns`     | Campaign collection preview                                  |
+| `/dashboard/campaigns/new` | AI generation and editable draft builder                     |
+| `/dashboard/campaigns`     | Private saved drafts, open/edit and delete                   |
+| `/dashboard/campaigns/:id` | View, edit, save, and copy a campaign draft                  |
 | `/dashboard/calendar`      | Browsable calendar without saved events                      |
 | Unmatched routes           | Page-not-found screen                                        |
 
@@ -141,6 +183,29 @@ Auth endpoints: `POST /auth/register` (name/email/password, HTTP 201), `POST /au
 return `{ user: { id, name, email } }`. All POST requests need the request marker above.
 Invalid credentials return 401, duplicate registration 409, rate limits 429, and missing
 or expired sessions 401 with `code: "UNAUTHENTICATED"`.
+
+Campaign endpoints (authenticated, database required):
+
+| Method | Path                  | Behavior                                              |
+| ------ | --------------------- | ----------------------------------------------------- |
+| GET    | `/campaigns/config`   | `{ configured }` without exposing the key             |
+| POST   | `/campaigns/generate` | Returns `{ draft, brief }`; never saves automatically |
+| GET    | `/campaigns`          | `{ campaigns, total }`, newest first                  |
+| POST   | `/campaigns`          | Saves a reviewed draft, HTTP 201, `{ campaign }`      |
+| GET    | `/campaigns/:id`      | `{ campaign }`, private to its owner                  |
+| PUT    | `/campaigns/:id`      | Replaces title/posts; `{ campaign }`                  |
+| DELETE | `/campaigns/:id`      | HTTP 204                                              |
+
+Generate/save brief: `productId` (owned saved product), `goal` (1–600 characters),
+`audience` (1–300), `platform` (facebook/instagram), `tone` (friendly/professional/playful),
+`language` (English/Sinhala/Tamil). Save also needs `title` (1–100) and exactly three `posts`.
+Each post has `angle` (1–80), `caption` (1–2200), `callToAction` (1–200), `imageIdea` (1–600),
+and 1–12 `hashtags` (each starts with #, at most 60 characters, no spaces).
+All ownership, record IDs, snapshots, timestamps, and the fixed `draft` status are server-controlled.
+Foreign campaign/product IDs return 404; a missing profile returns 409 before generation/save.
+Generation errors use readable messages and codes: `AI_NOT_CONFIGURED`/`AI_CONFIGURATION_ERROR`
+(503), `AI_QUOTA_EXCEEDED`/`GENERATION_RATE_LIMITED` (429), `GENERATION_IN_PROGRESS` (409),
+`AI_BLOCKED` (422), `AI_INVALID_RESPONSE` (502), `AI_UNAVAILABLE` (503), `AI_TIMEOUT` (504).
 
 Profile fields: `name` (required, 100 characters), `category` (required, 60),
 `location` (optional, 160), `story` (optional, 2000).
@@ -169,9 +234,9 @@ client/src/
 server/src/
   config/         Environment and MongoDB connection
   middleware/     Database availability guard
-  models/         User, Session, BusinessProfile, and Product schemas
-  lib/            Password hashing and session helpers
-  routes/         Health, auth, business profile, products
+  models/         User, Session, BusinessProfile, Product, Campaign schemas
+  lib/            Password/session helpers and Gemini integration
+  routes/         Health, auth, business profile, products, campaigns
   validation/     Explicit form-field validation
   app.js          Express app
   index.js        Startup and graceful shutdown
@@ -180,14 +245,16 @@ server/test/      HTTP and disposable MongoDB integration tests
 
 ## Environment
 
-| File        | Variable       | Default/purpose                               |
-| ----------- | -------------- | --------------------------------------------- |
-| client/.env | `VITE_API_URL` | `http://localhost:5000/api`                   |
-| server/.env | `NODE_ENV`     | `development`                                 |
-| server/.env | `HOST`         | `localhost`                                   |
-| server/.env | `PORT`         | `5000`                                        |
-| server/.env | `CLIENT_URL`   | `http://localhost:5173,http://localhost:4173` |
-| server/.env | `MONGODB_URI`  | Blank template; required for saved data       |
+| File        | Variable         | Default/purpose                               |
+| ----------- | ---------------- | --------------------------------------------- |
+| client/.env | `VITE_API_URL`   | `http://localhost:5000/api`                   |
+| server/.env | `NODE_ENV`       | `development`                                 |
+| server/.env | `HOST`           | `localhost`                                   |
+| server/.env | `PORT`           | `5000`                                        |
+| server/.env | `CLIENT_URL`     | `http://localhost:5173,http://localhost:4173` |
+| server/.env | `MONGODB_URI`    | Blank template; required for saved data       |
+| server/.env | `GEMINI_API_KEY` | Blank template; required only for generation  |
+| server/.env | `GEMINI_MODEL`   | `gemini-3.1-flash-lite`                       |
 
 For your own local MongoDB instance, use `mongodb://127.0.0.1:27017/localbiz_ai`.
 Never put secrets in the frontend. Restart both apps after environment changes.
@@ -203,7 +270,9 @@ npm run format:check
 
 The integration tests download a MongoDB binary on first run and start a disposable local
 database. They verify persistence, CRUD, validation, authentication, account isolation,
-expiry, logout, origin checks, rate limiting, and database-unavailable responses.
+expiry, logout, origin checks, rate limiting, draft persistence, campaign ownership,
+generation prerequisites, output validation, quotas/timeouts, and database-unavailable responses.
+Gemini calls are stubbed in automated tests, so they consume no real API quota.
 They do not use Atlas or the credentials in `server/.env`. Internet access is needed for
 the first binary download. Keep the disposable test helper as a development dependency.
 
@@ -226,6 +295,11 @@ Express does not serve `client/dist`; deployment is a later task.
 - **Too many attempts:** wait 15 minutes. Restarting the local server also clears this MVP limiter.
 - **Old Phase 2 data seems missing:** it is preserved in Atlas without an account owner;
   authorize migration to your real account if needed.
-- **Disabled campaign control:** that feature belongs to a later phase.
+- **Generate button disabled:** save a business profile, add an owned product, and configure
+  `GEMINI_API_KEY` in the backend; restart the backend after environment changes.
+- **Gemini quota error:** wait and check the project's model quota in AI Studio. Retrying
+  repeatedly does not restore quota. Provider limits are separate from the app's request limit.
+- **Gemini configuration error:** verify the key's Gemini API access and configured model.
+- **Draft not in Campaigns:** generation is a preview; click Save campaign draft first.
 
 Keep the next phase focused and authorize it before adding AI or integrations.

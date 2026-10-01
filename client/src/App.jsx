@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import ProductsPage from './pages/ProductsPage.jsx';
 import CampaignsPage from './pages/CampaignsPage.jsx';
 import NewCampaignPage from './pages/NewCampaignPage.jsx';
+import CampaignDetailPage from './pages/CampaignDetailPage.jsx';
 import CalendarPage from './pages/CalendarPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
@@ -20,7 +21,9 @@ export default function App() {
     const pageName =
       pathname === '/'
         ? 'Small business, big possibilities'
-        : pathname.split('/').filter(Boolean).join(' · ');
+        : pathname.startsWith('/dashboard/campaigns/') && !pathname.endsWith('/new')
+          ? 'Campaign draft'
+          : pathname.split('/').filter(Boolean).join(' · ');
     document.title = `${pageName} | LocalBiz AI`;
   }, [pathname]);
 
@@ -35,6 +38,7 @@ export default function App() {
           <Route path="products" element={<ProductsPage />} />
           <Route path="campaigns/new" element={<NewCampaignPage />} />
           <Route path="campaigns" element={<CampaignsPage />} />
+          <Route path="campaigns/:id" element={<CampaignDetailPage key={pathname} />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFoundPage dashboard />} />

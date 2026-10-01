@@ -13,6 +13,7 @@ import {
 import PageHeader from '../components/PageHeader.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import StoreIllustration from '../components/StoreIllustration.jsx';
+import LoadState from '../components/LoadState.jsx';
 
 const stats = [
   {
@@ -25,7 +26,7 @@ const stats = [
   {
     label: 'Campaigns',
     icon: Megaphone,
-    note: 'Big ideas, ready to take shape',
+    note: 'Your saved campaign drafts',
     to: '/dashboard/campaigns',
     color: 'bg-[#f8eee4] text-[#ae7950]',
   },
@@ -56,14 +57,15 @@ const steps = [
   {
     number: '03',
     icon: Sparkles,
-    title: 'Imagine your first campaign',
-    description: 'See where your next story will begin.',
+    title: 'Create your first campaign',
+    description: 'Generate three post ideas, then make them yours.',
     to: '/dashboard/campaigns/new',
   },
 ];
 
 export default function DashboardPage() {
-  const { products } = useOutletContext();
+  const { products, campaigns } = useOutletContext();
+  const campaignList = campaigns.data?.campaigns || [];
   return (
     <>
       <PageHeader
@@ -117,7 +119,11 @@ export default function DashboardPage() {
               </span>
             </div>
             <p className="mt-2 text-[32px] font-medium leading-none tracking-tight">
-              {label === 'Products' ? (products.data?.total ?? '—') : '—'}
+              {label === 'Products'
+                ? (products.data?.total ?? '—')
+                : label === 'Campaigns'
+                  ? (campaigns.data?.total ?? '—')
+                  : '—'}
             </p>
             <div className="mt-4 flex items-center justify-between gap-2">
               <p className="text-[11px] text-muted">
@@ -127,7 +133,13 @@ export default function DashboardPage() {
                     : products.error
                       ? 'Catalog unavailable'
                       : note
-                  : 'Coming soon'}
+                  : label === 'Campaigns'
+                    ? campaigns.loading
+                      ? 'Loading drafts…'
+                      : campaigns.error
+                        ? 'Campaigns unavailable'
+                        : note
+                    : 'Coming soon'}
               </p>
               <ArrowUpRight className="text-stone-400 group-hover:text-sage" size={14} />
             </div>
@@ -172,13 +184,35 @@ export default function DashboardPage() {
               View all <span aria-hidden="true">↗</span>
             </Link>
           </div>
-          <EmptyState
-            icon={Megaphone}
-            title="Your next story belongs here"
-            description="There are no campaigns yet. Explore the builder to see where your ideas will take shape."
-            to="/dashboard/campaigns/new"
-            linkLabel="Explore the campaign builder"
-          />
+          <LoadState resource={campaigns} label="campaigns" />
+          {campaigns.data &&
+            (campaignList.length ? (
+              <div className="divide-y divide-line px-5">
+                {campaignList.slice(0, 3).map((campaign) => (
+                  <Link
+                    key={campaign.id}
+                    to={`/dashboard/campaigns/${campaign.id}`}
+                    className="flex items-center justify-between gap-3 py-5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{campaign.title}</p>
+                      <p className="mt-1 truncate text-xs text-muted">
+                        {campaign.productName} · 3 post ideas · Draft
+                      </p>
+                    </div>
+                    <ArrowRight size={16} className="shrink-0 text-sage" />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Megaphone}
+                title="Your next story belongs here"
+                description="There are no campaigns yet. Turn a product into three post ideas and save your first draft."
+                to="/dashboard/campaigns/new"
+                linkLabel="Create a campaign"
+              />
+            ))}
         </section>
       </div>
 
@@ -188,7 +222,7 @@ export default function DashboardPage() {
         </span>
         <p className="flex-1 leading-5 text-muted">
           <strong className="font-semibold text-forest">Your business, taking shape.</strong> Save
-          your profile and build your product catalog. Campaign creation is coming soon.
+          your profile, build your catalog, and create a campaign that sounds like you.
         </p>
         <span className="text-[10px] font-semibold tracking-wider text-sage">YOUR WORKSPACE</span>
       </div>

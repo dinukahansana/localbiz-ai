@@ -9,55 +9,69 @@ import requireDatabase from './middleware/requireDatabase.js';
 import requireAuth from './middleware/requireAuth.js';
 import protectWrites from './middleware/protectWrites.js';
 import authRouter from './routes/auth.js';
+import createCampaignRouter from './routes/campaigns.js';
 
-const app = express();
-app.disable('x-powered-by');
-app.use(cors({ origin: env.clientOrigins, credentials: true }));
-app.use(cookieParser());
-app.use(express.json({ limit: '100kb' }));
+export function createApp({ generateCampaign } = {}) {
+  const app = express();
+  app.disable('x-powered-by');
+  app.use(cors({ origin: env.clientOrigins, credentials: true }));
+  app.use(cookieParser());
+  app.use(express.json({ limit: '100kb' }));
 
-app.use('/api/health', healthRouter);
-app.use('/api/auth', requireDatabase, protectWrites, authRouter);
-app.use(
-  '/api/business-profile',
-  requireDatabase,
-  protectWrites,
-  requireAuth,
-  businessProfileRouter,
-);
-app.use('/api/products', requireDatabase, protectWrites, requireAuth, productsRouter);
+  app.use('/api/health', healthRouter);
+  app.use('/api/auth', requireDatabase, protectWrites, authRouter);
+  app.use(
+    '/api/business-profile',
+    requireDatabase,
+    protectWrites,
+    requireAuth,
+    businessProfileRouter,
+  );
+  app.use('/api/products', requireDatabase, protectWrites, requireAuth, productsRouter);
+  app.use(
+    '/api/campaigns',
+    requireDatabase,
+    protectWrites,
+    requireAuth,
+    createCampaignRouter(generateCampaign),
+  );
 
-app.use((request, response) => {
-  response.status(404).json({ error: 'Route not found.' });
-});
+  app.use((request, response) => {
+    response.status(404).json({ error: 'Route not found.' });
+  });
 
-// Keep parser errors readable without leaking server internals.
-app.use((error, request, response, next) => {
-  if (response.headersSent) return next(error);
-  if (error.name === 'ValidationError') {
-    return response.status(400).json({ error: 'Some values are invalid. Please check your form.' });
-  }
-  if (
-    [
-      'MongoNetworkError',
-      'MongoServerSelectionError',
-      'MongooseServerSelectionError',
-      'MongoNotConnectedError',
-    ].includes(error.name)
-  ) {
-    return response.status(503).json({
-      error: 'The database connection was interrupted. Please try again.',
-      code: 'DATABASE_UNAVAILABLE',
-    });
-  }
-  const status = error.status === 400 || error.status === 413 ? error.status : 500;
-  const message =
-    status === 400
-      ? 'Invalid JSON body.'
-      : status === 413
-        ? 'Request body too large.'
-        : 'Internal server error.';
-  response.status(status).json({ error: message });
-});
+  // Keep parser errors readable without leaking server internals.
+  app.use((error, request, response, next) => {
+    if (response.headersSent) return next(error);
+    if (error.name === 'ValidationError') {
+      return response
+        .status(400)
+        .json({ error: 'Some values are invalid. Please check your form.' });
+    }
+    if (
+      [
+        'MongoNetworkError',
+        'MongoServerSelectionError',
+        'MongooseServerSelectionError',
+        'MongoNotConnectedError',
+      ].includes(error.name)
+    ) {
+      return response.status(503).json({
+        error: 'The database connection was interrupted. Please try again.',
+        code: 'DATABASE_UNAVAILABLE',
+      });
+    }
+    const status = error.status === 400 || error.status === 413 ? error.status : 500;
+    const message =
+      status === 400
+        ? 'Invalid JSON body.'
+        : status === 413
+          ? 'Request body too large.'
+          : 'Internal server error.';
+    response.status(status).json({ error: message });
+  });
 
-export default app;
+  return app;
+}
+
+export default createApp();

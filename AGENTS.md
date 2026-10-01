@@ -2,7 +2,7 @@
 
 ## Current scope
 
-This project is the Phase 3 authenticated workspace for LovHack Season 3, by NextStack Studio.
+This project is the Phase 4 AI campaign workspace for LovHack Season 3, by NextStack Studio.
 Keep the MVP focused and the JavaScript beginner-readable.
 
 - Keep the React + Vite + Tailwind frontend in `client/`.
@@ -12,8 +12,10 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Registration, login, logout, protected routes, and per-account MongoDB data are authorized.
 - Scope all profile/product queries to the authenticated user; ignore form-supplied owners.
 - Keep legacy shared Phase 2 records untouched until a migration is explicitly authorized.
-- Do not add AI calls, campaign generation, scheduling persistence,
-  or social integrations unless the user explicitly asks for a later phase.
+- Gemini campaign generation, editable saved drafts, and per-account campaign CRUD are authorized.
+- Keep generation separate from saving. Validate AI output and protect quota with limits.
+- Send only the authenticated business profile, selected product facts, and campaign brief to Gemini.
+- Do not add scheduling persistence, image generation, or social integrations without later authorization.
 - Placeholder controls must be disabled and visibly described as coming soon.
 - Do not present invented analytics, campaigns, products, or user accounts as real data.
 
@@ -43,6 +45,7 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Never log passwords or tokens, or store session credentials in localStorage.
 - Before deployment, configure HTTPS, same-site frontend/API routing, and trusted proxy behavior.
 - Tests must use a disposable MongoDB instance and never the developer's Atlas database.
+- Automated tests must stub Gemini and never use the developer's key. Live checks use synthetic data.
 
 ## Verification
 

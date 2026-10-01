@@ -35,13 +35,15 @@ export default function DashboardLayout() {
   const [logoutError, setLogoutError] = useState('');
   const profile = useResource('/business-profile');
   const products = useResource('/products');
+  const campaigns = useResource('/campaigns');
   const { pathname } = useLocation();
   const currentPage =
     [
       ...navigation,
       { to: '/dashboard/campaigns/new', label: 'New campaign' },
       { to: '/dashboard/profile', label: 'Business profile' },
-    ].find((item) => item.to === pathname)?.label || 'Page not found';
+    ].find((item) => item.to === pathname)?.label ||
+    (pathname.startsWith('/dashboard/campaigns/') ? 'Campaign draft' : 'Page not found');
 
   function closeMenu() {
     setMenuOpen(false);
@@ -214,7 +216,7 @@ export default function DashboardLayout() {
           tabIndex={-1}
           className="mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-10"
         >
-          <Outlet context={{ profile, products }} />
+          <Outlet context={{ profile, products, campaigns }} />
         </main>
         <footer className="mx-5 flex flex-wrap items-center justify-between gap-3 border-t border-line py-5 text-[11px] text-muted sm:mx-8 lg:mx-10">
           <span>Built for the businesses that make a neighborhood.</span>

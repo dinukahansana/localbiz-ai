@@ -1,16 +1,17 @@
 const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
 
 export async function api(path, options = {}) {
+  const { timeoutMs = 15000, ...requestOptions } = options;
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 15000);
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(`${baseUrl}${path}`, {
-      ...options,
+      ...requestOptions,
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'X-LocalBiz-Request': '1',
-        ...options.headers,
+        ...requestOptions.headers,
       },
       signal: controller.signal,
     });

@@ -9,6 +9,11 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT must be an integer between 1 and 65535.');
 }
 
+const geminiModel = process.env.GEMINI_MODEL?.trim() || 'gemini-3.1-flash-lite';
+if (!/^[a-z0-9][a-z0-9._-]{0,79}$/.test(geminiModel)) {
+  throw new Error('GEMINI_MODEL must be a valid model name, not a URL.');
+}
+
 export const env = {
   production: process.env.NODE_ENV === 'production',
   port,
@@ -18,4 +23,6 @@ export const env = {
     .map((origin) => origin.trim())
     .filter(Boolean),
   mongoUri: process.env.MONGODB_URI?.trim() || '',
+  geminiKey: process.env.GEMINI_API_KEY?.trim() || '',
+  geminiModel,
 };

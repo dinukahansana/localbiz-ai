@@ -2,7 +2,7 @@
   "name": "localbiz-ai",
   "private": true,
   "version": "0.1.0",
-  "description": "LocalBiz AI — LovHack Season 3, Phase 1 foundation",
+  "description": "LocalBiz AI — LovHack Season 3, AI campaign workspace",
   "type": "module",
   "workspaces": [
     "client",
