@@ -98,10 +98,11 @@ Avoid starting a second copy when these ports are already occupied.
    `localbiz_ai` between the hostname slash and `?`:
 
 ```dotenv
-MONGODB_URI=mongodb+srv://YOUR_USER:YOUR_ENCODED_PASSWORD@YOUR_CLUSTER.mongodb.net/localbiz_ai?retryWrites=true&w=majority
+# Paste your Atlas Drivers connection string only in the local server/.env file.
+MONGODB_URI=
 ```
 
-The example contains placeholders, not real credentials. Percent-encode special characters in
+The template stays blank so no credential-shaped example is committed. Percent-encode special characters in
 the password (for example `@` becomes `%40`). Keep this value only in `server/.env`;
 never put it in a `VITE_` variable or commit it. `.env` files are ignored by Git.
 
