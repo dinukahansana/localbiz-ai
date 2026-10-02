@@ -7,7 +7,7 @@ import LoadState from '../components/LoadState.jsx';
 import DeleteCampaign from '../components/DeleteCampaign.jsx';
 
 export default function CampaignsPage() {
-  const { campaigns } = useOutletContext();
+  const { campaigns, schedules } = useOutletContext();
   const [deleting, setDeleting] = useState(null);
   const [message, setMessage] = useState('');
   function deleted(id) {
@@ -17,6 +17,7 @@ export default function CampaignsPage() {
     });
     setDeleting(null);
     setMessage('Campaign draft deleted.');
+    schedules.reload();
   }
   return (
     <>
@@ -97,7 +98,7 @@ export default function CampaignsPage() {
         </section>
       )}
       <p className="mt-5 text-xs leading-5 text-muted">
-        Drafts are private to your account. Scheduling and automatic publishing are coming later.
+        Drafts are private to your account. Open a campaign to make posters and plan posting dates.
       </p>
       {deleting && (
         <DeleteCampaign campaign={deleting} onClose={() => setDeleting(null)} onDeleted={deleted} />

@@ -31,7 +31,7 @@ const stats = [
     color: 'bg-[#f8eee4] text-[#ae7950]',
   },
   {
-    label: 'Scheduled posts',
+    label: 'Planned posts',
     icon: CalendarDays,
     note: 'A little planning goes a long way',
     to: '/dashboard/calendar',
@@ -64,7 +64,7 @@ const steps = [
 ];
 
 export default function DashboardPage() {
-  const { products, campaigns } = useOutletContext();
+  const { products, campaigns, schedules } = useOutletContext();
   const campaignList = campaigns.data?.campaigns || [];
   return (
     <>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
                 ? (products.data?.total ?? '—')
                 : label === 'Campaigns'
                   ? (campaigns.data?.total ?? '—')
-                  : '—'}
+                  : (schedules.data?.scheduledTotal ?? '—')}
             </p>
             <div className="mt-4 flex items-center justify-between gap-2">
               <p className="text-[11px] text-muted">
@@ -139,7 +139,11 @@ export default function DashboardPage() {
                       : campaigns.error
                         ? 'Campaigns unavailable'
                         : note
-                    : 'Coming soon'}
+                    : schedules.loading
+                      ? 'Loading plans…'
+                      : schedules.error
+                        ? 'Posting plans unavailable'
+                        : note}
               </p>
               <ArrowUpRight className="text-stone-400 group-hover:text-sage" size={14} />
             </div>

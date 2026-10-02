@@ -5,13 +5,14 @@ import PageHeader from '../components/PageHeader.jsx';
 import LoadState from '../components/LoadState.jsx';
 import CampaignEditor from '../components/CampaignEditor.jsx';
 import PosterStudio from '../components/PosterStudio.jsx';
+import CampaignPlanning from '../components/CampaignPlanning.jsx';
 import useResource from '../hooks/useResource.js';
 import { api } from '../lib/api.js';
 
 export default function CampaignDetailPage() {
   const { id } = useParams();
   const resource = useResource(`/campaigns/${id}`);
-  const { campaigns } = useOutletContext();
+  const { campaigns, schedules } = useOutletContext();
   const { state } = useLocation();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -30,6 +31,7 @@ export default function CampaignDetailPage() {
       });
       resource.replace(result);
       campaigns.reload();
+      schedules.reload();
       setSuccess('Your changes are saved.');
     } catch (error) {
       setError(error.message);
@@ -76,8 +78,8 @@ export default function CampaignDetailPage() {
               ))}
             </dl>
             <p className="text-xs leading-5 text-muted">
-              These are saved draft ideas. Scheduling and automatic publishing are coming in a later
-              phase.
+              Save your edits, then plan posting dates below. Share the posts yourself and track
+              them in your content calendar.
             </p>
           </aside>
           <section className="panel min-w-0 p-5 sm:p-6">
@@ -99,6 +101,7 @@ export default function CampaignDetailPage() {
         </div>
       )}
       {campaign && <PosterStudio campaign={campaign} />}
+      {campaign && <CampaignPlanning campaign={campaign} />}
     </>
   );
 }

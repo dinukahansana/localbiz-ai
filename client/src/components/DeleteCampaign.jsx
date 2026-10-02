@@ -20,7 +20,8 @@ export default function DeleteCampaign({ campaign, onClose, onDeleted }) {
   return (
     <Modal title="Delete campaign draft?" busy={busy} onClose={onClose}>
       <p className="break-words text-sm leading-6 text-muted">
-        “{campaign.title}” and its three post ideas will be permanently removed.
+        “{campaign.title}”, its three post ideas, saved posters, and posting plans will be
+        permanently removed.
       </p>
       {error && (
         <p role="alert" className="mt-4 text-sm text-red-700">

@@ -1,6 +1,6 @@
 # LocalBiz AI
 
-**LovHack Season 3 — Phase 5**, by **NextStack Studio**.
+**LovHack Season 3 — Phase 6**, by **NextStack Studio**.
 A responsive React workspace for local businesses, with an Express API and MongoDB persistence.
 
 ## What works
@@ -20,9 +20,10 @@ A responsive React workspace for local businesses, with an Express API and Mongo
 - Save, reopen, edit, and delete account-private campaign drafts in MongoDB.
 - Overview shows the real draft count and recent saved campaigns.
 - Create free branded photo posters for saved campaign posts; preview, save, reopen, and download PNGs.
-- Landing, working login/register screens, and browsable calendar.
+- Plan posting dates, view the calendar/agenda, reschedule/cancel, and manually mark posts as published.
+- Dashboard shows the real planned-post count; landing and working login/register screens.
 
-Paid AI image generation, scheduled posts, and social integrations are later phases.
+Paid AI image generation, automatic publishing, and social integrations are later phases.
 Email verification, password reset, OAuth, MFA, and account deletion are not included yet.
 
 Existing shared Phase 2 records remain unchanged in Atlas, but are hidden from new accounts
@@ -140,7 +141,8 @@ These in-memory safeguards reset on restart; shared limits are needed for multip
 Free Tier provider quotas are separate and can change; check AI Studio for your actual limits.
 
 Captions, hashtags, calls to action, and photo suggestions are draft text. Review claims and
-language quality before sharing. Photo posters use the separate free builder below; no posts are scheduled/published.
+language quality before sharing. Photo posters use the separate free builder below. Posting
+plans are dates to guide your manual sharing; the app never sends a post to a social platform.
 Saved drafts keep product/business names even after their source records change or are removed.
 Editing a saved draft changes its title/posts; its original product and brief stay unchanged.
 
@@ -174,19 +176,45 @@ The poster endpoints alone accept larger JSON bodies, after checking login. No G
 are made for posters. Storage is deliberately simple for the LovHack MVP; object storage and
 account-wide storage quotas can be added before a wider public launch.
 
+## Plan posting dates (Phase 6)
+
+No additional key or environment variables are needed. Dates use **Sri Lanka time (Asia/Colombo,
+UTC+05:30)** in both the calendar and date picker, regardless of your computer's timezone.
+The API stores UTC instants in MongoDB's `postschedules` collection.
+
+1. Open a saved campaign and scroll to **Plan your posting dates**, then choose **Plan post 1/2/3**.
+   You can also use **Content calendar → Plan a post** and choose a saved campaign/post.
+2. Choose a future date/time within the next two years and click **Save posting plan**.
+3. Open **Content calendar** to browse months. Click a date to view its posts, or select
+   **Show whole month**. Filter planned, manually published, or cancelled entries.
+4. **Reschedule** changes a planned date. **Cancel plan** keeps the record; find it with the
+   Cancelled filter and use **Plan again** to restore it with a future date.
+5. Copy the latest saved post text and open its campaign to download the poster. Share it yourself,
+   then click **Mark as published**. This records your confirmation time; it does not verify or
+   publish on Facebook/Instagram. Published entries stay on their original planned calendar date.
+6. Refresh/reopen to confirm persistence. The overview counts only entries still marked Planned,
+   including past-due plans. A past-due plan never publishes automatically.
+
+Each campaign's three posts can have one plan each. Duplicate requests are rejected. Published
+plans cannot be cancelled or rescheduled; create another campaign for a new publishing round.
+Planning reads the latest saved caption and poster rather than copying them into the plan.
+Deleting a campaign also deletes its posters/plans; deleting the original product does not.
+All plan access is private to the authenticated account. No notifications or background jobs
+are included in this phase.
+
 ## Routes
 
 | URL                        | Behavior                                                     |
 | -------------------------- | ------------------------------------------------------------ |
 | `/`                        | Landing page                                                 |
 | `/login`, `/register`      | Working login and registration                               |
-| `/dashboard`               | Overview with real product count; future metrics show a dash |
+| `/dashboard`               | Overview with real product, draft, and planned-post counts   |
 | `/dashboard/products`      | Saved catalog, add/edit dialogs, delete confirmation         |
 | `/dashboard/profile`       | Saved business details                                       |
 | `/dashboard/campaigns/new` | AI generation and editable draft builder                     |
 | `/dashboard/campaigns`     | Private saved drafts, open/edit and delete                   |
-| `/dashboard/campaigns/:id` | Edit/copy a draft; create, save, and download photo posters  |
-| `/dashboard/calendar`      | Browsable calendar without saved events                      |
+| `/dashboard/campaigns/:id` | Edit/copy drafts, build photo posters, plan posting dates    |
+| `/dashboard/calendar`      | Private posting calendar, agenda, and manual status controls |
 | Unmatched routes           | Page-not-found screen                                        |
 
 ## API
@@ -247,6 +275,23 @@ Poster endpoints (authenticated, database required):
 Unknown fields, ownership, IDs, and timestamps are ignored. Foreign/missing campaigns return 404;
 invalid IDs/indexes/images return 400. Oversized JSON returns 413; poster saves can return 429.
 
+Posting-plan endpoints (authenticated, database required):
+
+| Method | Path                    | Behavior                                       |
+| ------ | ----------------------- | ---------------------------------------------- |
+| GET    | `/schedules`            | `{ schedules, total, scheduledTotal }`         |
+| POST   | `/schedules`            | Create a plan, HTTP 201, `{ schedule }`        |
+| PUT    | `/schedules/:id`        | Reschedule or restore a cancelled plan         |
+| PATCH  | `/schedules/:id/status` | Set `published` or `cancelled`; `{ schedule }` |
+
+Create fields: `campaignId` (owned saved campaign), `postIndex` (number 0, 1, or 2), and
+`scheduledFor` (canonical UTC ISO date, e.g. `2026-10-05T03:30:00.000Z`, which is 09:00 Sri Lanka time).
+Reschedule accepts only `scheduledFor`; status updates accept only `status`. The server controls
+IDs, owners, campaign references, status on create, and manual `publishedAt` timestamps.
+Invalid dates/IDs/indexes/status values return 400; foreign/missing records return 404;
+duplicate plans and conflicting status changes return 409. GET returns cancelled entries too;
+the frontend's default calendar filter hides them. No poster bytes or account information are included.
+
 Profile fields: `name` (required, 100 characters), `category` (required, 60),
 `location` (optional, 160), `story` (optional, 2000).
 
@@ -274,9 +319,9 @@ client/src/
 server/src/
   config/         Environment and MongoDB connection
   middleware/     Database availability guard
-  models/         User, Session, BusinessProfile, Product, Campaign schemas
+  models/         Private account, profile, product, campaign, poster, and plan schemas
   lib/            Password/session helpers and Gemini integration
-  routes/         Health, auth, business profile, products, campaigns
+  routes/         Health, auth, profile, products, campaigns, posters, schedules
   validation/     Explicit form-field validation
   app.js          Express app
   index.js        Startup and graceful shutdown
@@ -311,7 +356,8 @@ npm run format:check
 The integration tests download a MongoDB binary on first run and start a disposable local
 database. They verify persistence, CRUD, validation, authentication, account isolation,
 expiry, logout, origin checks, rate limiting, draft persistence, campaign ownership,
-generation prerequisites, output validation, quotas/timeouts, and database-unavailable responses.
+generation prerequisites, output validation, quotas/timeouts, poster privacy/validation, posting-plan
+ownership, date/UTC conversion, uniqueness, status transitions, cleanup, and database-unavailable responses.
 Gemini calls are stubbed in automated tests, so they consume no real API quota.
 They do not use Atlas or the credentials in `server/.env`. Internet access is needed for
 the first binary download. Keep the disposable test helper as a development dependency.
@@ -344,5 +390,10 @@ Express does not serve `client/dist`; deployment is a later task.
 - **Poster preview button disabled:** upload a supported product photo first.
 - **Poster shows old wording:** edit its headline/call to action, create a fresh preview, then replace it.
 - **Poster save fails:** keep the preview, restore the connection, and retry; download still works locally.
+- **Posting date rejected:** use a future Sri Lanka time within two years. Refresh after a timeout
+  to check whether the plan was saved before trying again.
+- **Cancelled plan missing:** choose the Cancelled filter; use Plan again to restore it.
+- **Date passed but no post appeared online:** plans guide manual sharing. Share the post yourself,
+  then use Mark as published to record it.
 
-Keep the next phase focused and authorize it before adding AI or integrations.
+Keep the next phase focused and authorize it before adding automatic publishing or integrations.

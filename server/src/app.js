@@ -11,6 +11,7 @@ import protectWrites from './middleware/protectWrites.js';
 import authRouter from './routes/auth.js';
 import createCampaignRouter from './routes/campaigns.js';
 import createPosterRouter from './routes/campaignPosters.js';
+import createScheduleRouter from './routes/schedules.js';
 
 export function createApp({ generateCampaign } = {}) {
   const app = express();
@@ -38,6 +39,7 @@ export function createApp({ generateCampaign } = {}) {
     businessProfileRouter,
   );
   app.use('/api/products', requireDatabase, protectWrites, requireAuth, productsRouter);
+  app.use('/api/schedules', requireDatabase, protectWrites, requireAuth, createScheduleRouter());
   app.use(
     '/api/campaigns',
     requireDatabase,

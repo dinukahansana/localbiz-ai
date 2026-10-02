@@ -36,6 +36,7 @@ export default function DashboardLayout() {
   const profile = useResource('/business-profile');
   const products = useResource('/products');
   const campaigns = useResource('/campaigns');
+  const schedules = useResource('/schedules');
   const { pathname } = useLocation();
   const currentPage =
     [
@@ -216,7 +217,7 @@ export default function DashboardLayout() {
           tabIndex={-1}
           className="mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-10"
         >
-          <Outlet context={{ profile, products, campaigns }} />
+          <Outlet context={{ profile, products, campaigns, schedules }} />
         </main>
         <footer className="mx-5 flex flex-wrap items-center justify-between gap-3 border-t border-line py-5 text-[11px] text-muted sm:mx-8 lg:mx-10">
           <span>Built for the businesses that make a neighborhood.</span>

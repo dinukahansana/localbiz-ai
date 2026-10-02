@@ -2,7 +2,7 @@
 
 ## Current scope
 
-This project is the Phase 5 campaign and photo-poster workspace for LovHack Season 3, by NextStack Studio.
+This project is the Phase 6 campaign, poster, and content-calendar workspace for LovHack Season 3, by NextStack Studio.
 Keep the MVP focused and the JavaScript beginner-readable.
 
 - Keep the React + Vite + Tailwind frontend in `client/`.
@@ -18,7 +18,11 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Free branded posters from user-uploaded product photos, private poster storage, and PNG downloads are authorized.
 - Keep poster previews separate from saving. Never fetch arbitrary image URLs on the server.
 - Decode and validate saved PNGs; keep image bytes out of campaign lists and scope access to owners.
-- Do not add paid AI image generation, scheduling persistence, or social integrations without later authorization.
+- Private posting plans, date changes, recoverable cancellation, and manual published status are authorized.
+- Store posting dates as UTC instants and label calendar/date-picker times as Sri Lanka (Asia/Colombo).
+- Keep one plan per campaign post, scope all plan queries to owners, and remove plans with deleted campaigns.
+- A planned date never triggers a social API call; published means the user manually confirmed sharing.
+- Do not add paid AI image generation, background publishing, or social integrations without later authorization.
 - Placeholder controls must be disabled and visibly described as coming soon.
 - Do not present invented analytics, campaigns, products, or user accounts as real data.
 
