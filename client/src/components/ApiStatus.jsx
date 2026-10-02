@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-
-const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
+import { apiUrl } from '../lib/api.js';
 
 export default function ApiStatus() {
   const [status, setStatus] = useState('checking');
@@ -10,12 +9,15 @@ export default function ApiStatus() {
   useEffect(() => {
     const controller = new AbortController();
     // The timeout also covers a server that accepts a connection but never replies.
-    const timeout = window.setTimeout(() => controller.abort(), 5000);
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      import.meta.env.PROD ? 60000 : 5000,
+    );
     let mounted = true;
 
     async function checkHealth() {
       try {
-        const response = await fetch(`${apiUrl}/health`, { signal: controller.signal });
+        const response = await fetch(apiUrl('/health'), { signal: controller.signal });
         const data = await response.json();
         if (!response.ok || data.status !== 'ok' || data.service !== 'localbiz-ai-api')
           throw new Error('API unavailable');

@@ -1,7 +1,11 @@
 # LocalBiz AI
 
-**LovHack Season 3 — Phase 6**, by **NextStack Studio**.
+**LovHack Season 3 — Phase 7**, by **NextStack Studio**.
 A responsive React workspace for local businesses, with an Express API and MongoDB persistence.
+
+Deployment preparation: [Vercel + Render setup](docs/DEPLOYMENT.md),
+[release checks](docs/RELEASE_CHECKLIST.md), and [demo walkthrough](docs/DEMO.md).
+The deployment configuration is prepared; the live release must be verified separately.
 
 ## What works
 
@@ -22,6 +26,8 @@ A responsive React workspace for local businesses, with an Express API and Mongo
 - Create free branded photo posters for saved campaign posts; preview, save, reopen, and download PNGs.
 - Plan posting dates, view the calendar/agenda, reschedule/cancel, and manually mark posts as published.
 - Dashboard shows the real planned-post count; landing and working login/register screens.
+- Production builds use a same-origin `/api` proxy, with Vercel deep-link routing and a Render service blueprint.
+- Production environment validation, bounded proxy trust, readiness health checks, and uncached API responses.
 
 Paid AI image generation, automatic publishing, and social integrations are later phases.
 Email verification, password reset, OAuth, MFA, and account deletion are not included yet.
@@ -223,16 +229,17 @@ are included in this phase.
 All paths below start with `/api`. Auth and data endpoints require a connected database;
 profile/product endpoints also require a valid session cookie.
 
-| Method | Path                | Response                                        |
-| ------ | ------------------- | ----------------------------------------------- |
-| GET    | `/health`           | API liveness, timestamp, uptime, database state |
-| GET    | `/business-profile` | `{ profile }`, initially null                   |
-| PUT    | `/business-profile` | Create/update your profile; `{ profile }`       |
-| GET    | `/products`         | `{ products, total }`, newest first             |
-| GET    | `/products/:id`     | `{ product }`                                   |
-| POST   | `/products`         | Created product, HTTP 201                       |
-| PUT    | `/products/:id`     | Updated product                                 |
-| DELETE | `/products/:id`     | HTTP 204, no response body                      |
+| Method | Path                | Response                                          |
+| ------ | ------------------- | ------------------------------------------------- |
+| GET    | `/health`           | API liveness, timestamp, uptime, database state   |
+| GET    | `/ready`            | HTTP 200 when MongoDB is connected; 503 otherwise |
+| GET    | `/business-profile` | `{ profile }`, initially null                     |
+| PUT    | `/business-profile` | Create/update your profile; `{ profile }`         |
+| GET    | `/products`         | `{ products, total }`, newest first               |
+| GET    | `/products/:id`     | `{ product }`                                     |
+| POST   | `/products`         | Created product, HTTP 201                         |
+| PUT    | `/products/:id`     | Updated product                                   |
+| DELETE | `/products/:id`     | HTTP 204, no response body                        |
 
 Auth endpoints: `POST /auth/register` (name/email/password, HTTP 201), `POST /auth/login`
 (email/password), `GET /auth/me`, and `POST /auth/logout` (HTTP 204). Registration/login/me
@@ -331,16 +338,17 @@ server/test/      HTTP and disposable MongoDB integration tests
 
 ## Environment
 
-| File        | Variable         | Default/purpose                               |
-| ----------- | ---------------- | --------------------------------------------- |
-| client/.env | `VITE_API_URL`   | `http://localhost:5000/api`                   |
-| server/.env | `NODE_ENV`       | `development`                                 |
-| server/.env | `HOST`           | `localhost`                                   |
-| server/.env | `PORT`           | `5000`                                        |
-| server/.env | `CLIENT_URL`     | `http://localhost:5173,http://localhost:4173` |
-| server/.env | `MONGODB_URI`    | Blank template; required for saved data       |
-| server/.env | `GEMINI_API_KEY` | Blank template; required only for generation  |
-| server/.env | `GEMINI_MODEL`   | `gemini-3.1-flash-lite`                       |
+| File        | Variable           | Default/purpose                               |
+| ----------- | ------------------ | --------------------------------------------- |
+| client/.env | `VITE_API_URL`     | `http://localhost:5000/api`                   |
+| server/.env | `NODE_ENV`         | `development`                                 |
+| server/.env | `HOST`             | `localhost`                                   |
+| server/.env | `TRUST_PROXY_HOPS` | `0` locally; `1` for Render's nearest proxy   |
+| server/.env | `PORT`             | `5000`                                        |
+| server/.env | `CLIENT_URL`       | `http://localhost:5173,http://localhost:4173` |
+| server/.env | `MONGODB_URI`      | Blank template; required for saved data       |
+| server/.env | `GEMINI_API_KEY`   | Blank template; required only for generation  |
+| server/.env | `GEMINI_MODEL`     | `gemini-3.1-flash-lite`                       |
 
 For your own local MongoDB instance, use `mongodb://127.0.0.1:27017/localbiz_ai`.
 Never put secrets in the frontend. Restart both apps after environment changes.
@@ -365,7 +373,9 @@ the first binary download. Keep the disposable test helper as a development depe
 
 Other commands: `npm run format`, `npm run preview` (frontend build on port 4173),
 and `npm start` (backend without watch mode). Run the backend separately for frontend preview.
-Express does not serve `client/dist`; deployment is a later task.
+Express serves the API; static frontend hosting uses Vercel.
+For Vercel deployment, use `npm run build:production` and the root `vercel.mjs` configuration.
+The Render API remains separate from static frontend hosting. See [DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Troubleshooting
 

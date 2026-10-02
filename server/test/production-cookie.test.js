@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server-core';
 
 process.env.NODE_ENV = 'production';
+process.env.CLIENT_URL = 'https://localbiz.example.test';
+process.env.TRUST_PROXY_HOPS = '1';
 process.env.MONGODB_URI = 'mongodb://127.0.0.1/production-cookie-test';
 const { default: app } = await import('../src/app.js');
 

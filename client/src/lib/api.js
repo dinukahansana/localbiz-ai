@@ -1,11 +1,17 @@
-const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
+const baseUrl = (
+  import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')
+).replace(/\/+$/, '');
 
 export function apiUrl(path) {
   return `${baseUrl}${path}`;
 }
 
 export async function api(path, options = {}) {
-  const { timeoutMs = 15000, responseType = 'json', ...requestOptions } = options;
+  const {
+    timeoutMs = import.meta.env.PROD ? 60000 : 15000,
+    responseType = 'json',
+    ...requestOptions
+  } = options;
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -19,6 +25,21 @@ export async function api(path, options = {}) {
       },
       signal: controller.signal,
     });
+    const expectsJson = !(response.ok && responseType === 'blob') && response.status !== 204;
+    if (expectsJson && !response.headers.get('content-type')?.includes('application/json')) {
+      throw new Error(
+        'The server is starting or temporarily unavailable. Wait a moment and retry.',
+      );
+    }
+    if (
+      response.ok &&
+      responseType === 'blob' &&
+      !response.headers.get('content-type')?.startsWith('image/png')
+    ) {
+      throw new Error(
+        'The poster could not be downloaded. The server may be starting; wait a moment and retry.',
+      );
+    }
     const data =
       response.status === 204
         ? null

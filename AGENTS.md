@@ -2,7 +2,7 @@
 
 ## Current scope
 
-This project is the Phase 6 campaign, poster, and content-calendar workspace for LovHack Season 3, by NextStack Studio.
+This project is the Phase 7 deployment-ready campaign, poster, and content-calendar workspace for LovHack Season 3, by NextStack Studio.
 Keep the MVP focused and the JavaScript beginner-readable.
 
 - Keep the React + Vite + Tailwind frontend in `client/`.
@@ -22,6 +22,10 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Store posting dates as UTC instants and label calendar/date-picker times as Sri Lanka (Asia/Colombo).
 - Keep one plan per campaign post, scope all plan queries to owners, and remove plans with deleted campaigns.
 - A planned date never triggers a social API call; published means the user manually confirmed sharing.
+- Production configuration, Vercel frontend/Render backend setup, and demo/submission documentation are authorized.
+- Build production with npm run build:production so browser requests use the same-origin /api proxy.
+- Keep host URLs exact, production cookies Secure, API replies uncached, and nearest-proxy trust bounded.
+- Live release checks must be recorded separately from local verification. Never claim a prepared deployment is live.
 - Do not add paid AI image generation, background publishing, or social integrations without later authorization.
 - Placeholder controls must be disabled and visibly described as coming soon.
 - Do not present invented analytics, campaigns, products, or user accounts as real data.

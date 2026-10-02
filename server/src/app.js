@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
-import healthRouter from './routes/health.js';
+import healthRouter, { readiness } from './routes/health.js';
 import businessProfileRouter from './routes/businessProfile.js';
 import productsRouter from './routes/products.js';
 import requireDatabase from './middleware/requireDatabase.js';
@@ -16,6 +16,15 @@ import createScheduleRouter from './routes/schedules.js';
 export function createApp({ generateCampaign } = {}) {
   const app = express();
   app.disable('x-powered-by');
+  app.set('trust proxy', env.trustProxyHops);
+  app.use('/api', (request, response, next) => {
+    response.set({
+      'Cache-Control': 'no-store',
+      'CDN-Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    next();
+  });
   app.use(cors({ origin: env.clientOrigins, credentials: true }));
   app.use(cookieParser());
   // Only authenticated poster uploads need the larger body limit.
@@ -30,6 +39,7 @@ export function createApp({ generateCampaign } = {}) {
   app.use(express.json({ limit: '100kb' }));
 
   app.use('/api/health', healthRouter);
+  app.get('/api/ready', readiness);
   app.use('/api/auth', requireDatabase, protectWrites, authRouter);
   app.use(
     '/api/business-profile',

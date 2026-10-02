@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: localbiz-ai-api
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --include=dev
+    startCommand: npm start
+    healthCheckPath: /api/ready
+    autoDeployTrigger: 'off'
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '24'
+      - key: HOST
+        value: 0.0.0.0
+      - key: TRUST_PROXY_HOPS
+        value: '1'
+      - key: CLIENT_URL
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.1-flash-lite
