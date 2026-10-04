@@ -16,7 +16,9 @@ import {
 async function reserveBudget(id, limit) {
   await ImageBudget.updateOne(
     { _id: id },
-    { $setOnInsert: { used: 0, expiresAt: new Date(Date.now() + 3 * 86400000) } },
+    {
+      $setOnInsert: { used: 0, expiresAt: new Date(Date.now() + 3 * 86400000) },
+    },
     { upsert: true },
   );
   return ImageBudget.findOneAndUpdate({ _id: id, used: { $lt: limit } }, { $inc: { used: 1 } });
@@ -30,7 +32,9 @@ export default function createGenerationRouter(provider = createDeapiProvider())
     keyGenerator: (request) => request.user._id.toString(),
     standardHeaders: 'draft-8',
     legacyHeaders: false,
-    message: { error: 'Too many image requests. Wait fifteen minutes before trying again.' },
+    message: {
+      error: 'Too many image requests. Wait fifteen minutes before trying again.',
+    },
   });
   router.get('/config', (request, response) =>
     response.json({
@@ -42,7 +46,10 @@ export default function createGenerationRouter(provider = createDeapiProvider())
   router.param('campaignId', async (request, response, next, id) => {
     if (!/^[a-f\d]{24}$/i.test(id))
       return response.status(400).json({ error: 'Invalid campaign ID.' });
-    const campaign = await Campaign.findOne({ _id: id, owner: request.user._id }).lean();
+    const campaign = await Campaign.findOne({
+      _id: id,
+      owner: request.user._id,
+    }).lean();
     if (!campaign) return response.status(404).json({ error: 'Campaign not found.' });
     request.campaign = campaign;
     next();
@@ -62,15 +69,18 @@ export default function createGenerationRouter(provider = createDeapiProvider())
   }
   // Reopening a campaign resumes its latest preview without buying another image.
   router.get('/:campaignId/:postIndex', async (request, response) => {
-    const job = await PosterGeneration.findOne(filter(request)).sort({ createdAt: -1 });
+    const job = await PosterGeneration.findOne(filter(request)).sort({
+      createdAt: -1,
+    });
     response.json({ generation: job ? publicGeneration(job) : null });
   });
   router.post('/:campaignId/:postIndex', attemptLimit, async (request, response) => {
     const { data, errors } = validateAiPoster(request.body);
     if (Object.keys(errors).length)
-      return response
-        .status(400)
-        .json({ error: 'Please check your AI poster prompt and photo.', fields: errors });
+      return response.status(400).json({
+        error: 'Please check your AI poster prompt and photo.',
+        fields: errors,
+      });
     await PosterGeneration.init();
     const existing = await PosterGeneration.findOne({
       owner: request.user._id,
@@ -81,9 +91,9 @@ export default function createGenerationRouter(provider = createDeapiProvider())
         existing.campaign.toString() !== request.params.campaignId ||
         existing.postIndex !== Number(request.params.postIndex)
       )
-        return response
-          .status(409)
-          .json({ error: 'This request belongs to another poster. Reload this page.' });
+        return response.status(409).json({
+          error: 'This request belongs to another poster. Reload this page.',
+        });
       return response.json({ generation: publicGeneration(existing) });
     }
     if (!provider.configured)
@@ -91,19 +101,26 @@ export default function createGenerationRouter(provider = createDeapiProvider())
         error:
           'Add DEAPI_API_KEY to the backend environment and restart it. The free photo template is available meanwhile.',
       });
+    const product = await Product.findOne({
+      _id: request.campaign.product,
+      owner: request.user._id,
+    }).select(data.useProductPhoto ? '+photoData' : '');
+    if (data.useProductPhoto && !product?.photoData?.length)
+      return response.status(409).json({
+        error:
+          'The saved product photo is unavailable. Reload or choose a new reference photo. No generation was started.',
+      });
     let image;
     try {
-      image = await prepareReference(data.image);
+      image = await prepareReference(
+        data.useProductPhoto ? Buffer.from(product.photoData) : data.image,
+      );
     } catch {
       return response.status(400).json({
         error:
           'This photo could not be decoded. Choose a valid JPG, PNG, or WebP under 20 million pixels.',
       });
     }
-    const product = await Product.findOne({
-      _id: request.campaign.product,
-      owner: request.user._id,
-    }).lean();
     const prompt = buildPosterPrompt({
       campaign: request.campaign,
       product,
@@ -247,7 +264,10 @@ export default function createGenerationRouter(provider = createDeapiProvider())
           if (!job) return response.status(404).json({ error: 'Image preview not found.' });
           // Deletion in another tab must not leave newly downloaded private bytes behind.
           if (
-            !(await Campaign.exists({ _id: request.params.campaignId, owner: request.user._id }))
+            !(await Campaign.exists({
+              _id: request.params.campaignId,
+              owner: request.user._id,
+            }))
           ) {
             await PosterGeneration.deleteMany({
               campaign: request.params.campaignId,

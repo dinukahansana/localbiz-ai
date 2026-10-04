@@ -6,16 +6,19 @@ import LoadState from '../components/LoadState.jsx';
 import ProductForm from '../components/ProductForm.jsx';
 import Modal from '../components/Modal.jsx';
 import { api } from '../lib/api.js';
+import useProductPhoto from '../hooks/useProductPhoto.js';
 
 function ProductImage({ product }) {
   const [failed, setFailed] = useState(false);
+  const photo = useProductPhoto(product);
+  const src = product.hasPhoto ? photo.url : product.imageUrl;
   return (
-    <div className="grid h-40 place-items-center overflow-hidden rounded-t-2xl bg-[#eef2e9] text-sage">
-      {product.imageUrl && !failed ? (
+    <div className="relative grid h-40 place-items-center overflow-hidden rounded-t-2xl bg-[#eef2e9] text-sage">
+      {src && !failed ? (
         <img
-          src={product.imageUrl}
+          src={src}
           alt={product.name}
-          className="h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-contain"
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => setFailed(true)}
@@ -142,7 +145,10 @@ export default function ProductsPage() {
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {catalog.map((product) => (
                 <article key={product.id} className="panel flex min-w-0 flex-col overflow-hidden">
-                  <ProductImage key={`${product.id}-${product.imageUrl}`} product={product} />
+                  <ProductImage
+                    key={`${product.id}-${product.photoVersion}-${product.imageUrl}`}
+                    product={product}
+                  />
                   <div className="flex flex-1 flex-col p-5">
                     {product.category && (
                       <p className="mb-2 break-words text-xs text-muted">{product.category}</p>

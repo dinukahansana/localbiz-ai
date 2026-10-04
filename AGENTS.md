@@ -11,6 +11,8 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Keep the public pages and dashboard routes working on desktop and mobile.
 - Registration, login, logout, protected routes, and per-account MongoDB data are authorized.
 - Scope all profile/product queries to the authenticated user; ignore form-supplied owners.
+- One uploaded photo per product, private MongoDB storage, preview/replacement/removal, and reuse as a poster reference are authorized.
+- Validate decoded photos, limit uploads to 5 MB/20 million pixels, strip metadata and keep photo bytes out of product JSON.
 - Keep legacy shared Phase 2 records untouched until a migration is explicitly authorized.
 - Gemini campaign generation, editable saved drafts, and per-account campaign CRUD are authorized.
 - Keep generation separate from saving. Validate AI output and protect quota with limits.
@@ -19,7 +21,7 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - deAPI AI promotion posters from editable campaign prompts and optional reference photos are authorized.
 - Keep AI generation asynchronous, separate from saving, and resumable without resubmitting paid calls.
 - Use exact price quotes, persistent app/account credit limits, and server-owned image provenance.
-- Send only owned public product/campaign details and the explicitly uploaded reference to deAPI.
+- Send only owned public product/campaign details and the chosen uploaded or saved product reference to deAPI.
 - Keep poster previews separate from saving. Never fetch arbitrary image URLs on the server.
 - Decode and validate saved PNGs; keep image bytes out of campaign lists and scope access to owners.
 - Private posting plans, date changes, recoverable cancellation, and manual published status are authorized.

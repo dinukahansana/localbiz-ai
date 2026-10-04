@@ -6,8 +6,9 @@ import AiPosterCard from './AiPosterCard.jsx';
 import useResource from '../hooks/useResource.js';
 import { api, apiUrl } from '../lib/api.js';
 import { createPoster, readProductPhoto } from '../lib/posterCanvas.js';
+import useProductPhoto from '../hooks/useProductPhoto.js';
 
-function PhotoPosterCard({ campaign, post, index, savedPoster, onSaved }) {
+function PhotoPosterCard({ campaign, post, index, savedPoster, onSaved, product }) {
   const [form, setForm] = useState({
     headline: savedPoster?.headline || post.angle.slice(0, 90),
     callToAction: savedPoster?.callToAction || post.callToAction.slice(0, 80),
@@ -87,6 +88,31 @@ function PhotoPosterCard({ campaign, post, index, savedPoster, onSaved }) {
       }
     }
   }
+  async function useSavedPhoto() {
+    const version = ++photoVersion.current;
+    setBusy(true);
+    setError('');
+    if (photo.current) URL.revokeObjectURL(photo.current.url);
+    photo.current = null;
+    setPhotoName('');
+    try {
+      const blob = await api(`/products/${product.id}/photo`, {
+        responseType: 'blob',
+        imageType: 'image/jpeg',
+      });
+      const loaded = await readProductPhoto(blob);
+      if (version !== photoVersion.current) {
+        URL.revokeObjectURL(loaded.url);
+        return;
+      }
+      photo.current = loaded;
+      setPhotoName('Saved product photo');
+    } catch (error) {
+      if (version === photoVersion.current) setError(error.message);
+    } finally {
+      if (version === photoVersion.current) setBusy(false);
+    }
+  }
   function build(event) {
     event.preventDefault();
     setError('');
@@ -151,6 +177,16 @@ function PhotoPosterCard({ campaign, post, index, savedPoster, onSaved }) {
               {photoName ||
                 'JPG, PNG, or WebP · up to 5 MB. The center of the photo will be cropped.'}
             </p>
+            {product?.hasPhoto && (
+              <button
+                type="button"
+                className="button-secondary mt-3"
+                disabled={busy}
+                onClick={useSavedPhoto}
+              >
+                Use saved product photo
+              </button>
+            )}
           </div>
           <FormField
             name={`headline-${index}`}
@@ -190,8 +226,8 @@ function PhotoPosterCard({ campaign, post, index, savedPoster, onSaved }) {
             <ImagePlus size={16} /> Create poster preview
           </button>
           <p className="text-xs leading-5 text-muted">
-            Free photo template. Your original photo stays in this browser; only a poster you save
-            is uploaded. Editing text or choosing another photo needs a new preview.
+            Free photo template. New uploads stay in this browser; saved product photos come from
+            your private catalog. Only a poster you save is uploaded. Editing needs a new preview.
           </p>
         </form>
         <div className="min-w-0">
@@ -256,6 +292,8 @@ function PhotoPosterCard({ campaign, post, index, savedPoster, onSaved }) {
 export default function PosterStudio({ campaign }) {
   const resource = useResource(`/campaign-posters/${campaign.id}`);
   const config = useResource('/poster-generations/config');
+  const product = useResource(`/products/${campaign.productId}`);
+  const productPhoto = useProductPhoto(product.data?.product);
   const [mode, setMode] = useState('ai');
   function saved(poster) {
     resource.replace({
@@ -311,6 +349,9 @@ export default function PosterStudio({ campaign }) {
                 savedPoster={resource.data.posters.find((item) => item.postIndex === index)}
                 onSaved={saved}
                 config={config.data}
+                product={product.data?.product}
+                productLoading={product.loading}
+                savedPhotoUrl={productPhoto.url}
               />
             );
           })}

@@ -3,20 +3,22 @@ import { Download, LoaderCircle, Save, Sparkles, RefreshCw } from 'lucide-react'
 import FormField from './FormField.jsx';
 import { api, apiUrl } from '../lib/api.js';
 import { readProductPhoto } from '../lib/posterCanvas.js';
+import { photoData } from '../lib/productPhotos.js';
 
 const referenceInstruction =
-  'If a reference photo is uploaded, use that exact product as the main subject. Preserve its shape, proportions, colors and visible details; change the setting and lighting to suit this promotion.';
+  'If a reference photo is provided, use that exact product as the main subject. Preserve its shape, proportions, colors and visible details; change the setting and lighting to suit this promotion.';
 
-function photoData(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('This photo could not be read.'));
-    reader.readAsDataURL(file);
-  });
-}
-
-export default function AiPosterCard({ campaign, post, index, savedPoster, onSaved, config }) {
+export default function AiPosterCard({
+  campaign,
+  post,
+  index,
+  savedPoster,
+  onSaved,
+  config,
+  product,
+  productLoading,
+  savedPhotoUrl,
+}) {
   const [form, setForm] = useState({
     headline: savedPoster?.headline || post.angle.slice(0, 90),
     callToAction: savedPoster?.callToAction || post.callToAction.slice(0, 80),
@@ -32,6 +34,7 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
   const [photoLoading, setPhotoLoading] = useState(false);
   const [photoFailed, setPhotoFailed] = useState(false);
   const [allowImagined, setAllowImagined] = useState(false);
+  const [useSavedPhoto, setUseSavedPhoto] = useState(true);
   const [generation, setGeneration] = useState(null);
   const [preview, setPreview] = useState('');
   const [unsaved, setUnsaved] = useState(false);
@@ -51,10 +54,12 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
   const generationId = generation?.id;
   const generationStatus = generation?.status;
   const savedGenerationId = savedPoster?.generationId;
-  const disabled = busy || Boolean(waiting) || photoLoading;
+  const disabled = busy || Boolean(waiting) || photoLoading || productLoading;
   const previousModel = generation?.model || savedPoster?.model;
   const previousUsedReference = previousModel === 'QwenImageEdit_Plus_NF4';
-  const needsReferenceAgain = previousUsedReference && !photo && !allowImagined;
+  const usingSavedPhoto = Boolean(product?.hasPhoto && useSavedPhoto && !photo && !photoFailed);
+  const hasReference = Boolean(photo) || usingSavedPhoto;
+  const needsReferenceAgain = previousUsedReference && !hasReference && !allowImagined;
 
   useEffect(() => {
     const version = imageVersion;
@@ -121,7 +126,9 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
     let active = true;
     const timer = setTimeout(async () => {
       try {
-        const result = await api(`${endpoint}/${generation.id}`, { timeoutMs: 50000 });
+        const result = await api(`${endpoint}/${generation.id}`, {
+          timeoutMs: 50000,
+        });
         if (active) setGeneration(result.generation);
       } catch (error) {
         if (active) {
@@ -151,6 +158,7 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
       setPhotoLoading(false);
       return;
     }
+    setUseSavedPhoto(false);
     setPhotoLoading(true);
     try {
       const loaded = await readProductPhoto(file);
@@ -173,10 +181,12 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
     setPhotoLoading(false);
     setPhotoFailed(false);
     setAllowImagined(false);
+    setUseSavedPhoto(true);
     setError('');
   }
   async function generate(event) {
     event.preventDefault();
+    if (productLoading) return;
     if (photoLoading || photoFailed) {
       setError('Wait for a valid reference photo, or remove it before generating a concept.');
       return;
@@ -195,6 +205,7 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
         body: JSON.stringify({
           ...form,
           image: photo?.image || '',
+          useProductPhoto: usingSavedPhoto,
           requestKey: requestKey.current,
         }),
       });
@@ -214,7 +225,9 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
     try {
       const current = await api(endpoint);
       const result = current.generation
-        ? await api(`${endpoint}/${current.generation.id}`, { timeoutMs: 50000 })
+        ? await api(`${endpoint}/${current.generation.id}`, {
+            timeoutMs: 50000,
+          })
         : current;
       setGeneration(result.generation);
       setPolling(true);
@@ -255,6 +268,34 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
             <label htmlFor={`ai-photo-${index}`} className="field-label">
               Reference product photo
             </label>
+            {product?.hasPhoto && (
+              <div className="mt-2 rounded-xl border border-line bg-canvas p-3">
+                <label className="flex items-start gap-2 text-sm text-forest">
+                  <input
+                    type="checkbox"
+                    checked={usingSavedPhoto}
+                    disabled={disabled || Boolean(photo) || photoFailed}
+                    onChange={(event) => {
+                      setUseSavedPhoto(event.target.checked);
+                      setAllowImagined(false);
+                    }}
+                    className="mt-1 accent-forest"
+                  />
+                  Use saved product photo
+                </label>
+                {savedPhotoUrl && usingSavedPhoto && (
+                  <img
+                    src={savedPhotoUrl}
+                    alt={`Saved reference for ${product.name}`}
+                    className="mt-3 h-32 w-full rounded-lg object-contain"
+                  />
+                )}
+                <p className="mt-2 text-xs leading-5 text-muted">
+                  Your saved photo is ready to reuse after a refresh. Choose a new upload below to
+                  use a different reference for this post.
+                </p>
+              </div>
+            )}
             <input
               ref={photoInput}
               id={`ai-photo-${index}`}
@@ -272,14 +313,18 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
               <p role="status" className="mt-2 text-xs text-forest">
                 Preparing your reference photo…
               </p>
-            ) : photo ? (
+            ) : hasReference ? (
               <p role="status" className="mt-2 text-xs leading-5 text-forest">
-                Reference photo ready. This product will guide your next AI image.
+                {usingSavedPhoto
+                  ? 'Saved product photo ready. It will guide your next AI image.'
+                  : 'Reference photo ready. This product will guide your next AI image.'}
               </p>
             ) : (
               <p className="mt-2 text-xs leading-5 text-amber-800">
                 {previousUsedReference
-                  ? 'Your previous image used a reference photo. Select it again before generating another; uploads clear when you refresh.'
+                  ? product?.hasPhoto
+                    ? 'Select the saved product photo above or upload a reference before generating another image.'
+                    : 'Your previous image used a reference photo. Select it again before generating another; uploads clear when you refresh.'
                   : 'No reference selected for the next image. Choose your product photo for editing; otherwise AI will imagine its appearance.'}
               </p>
             )}
@@ -293,7 +338,7 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
                 Remove reference photo
               </button>
             )}
-            {previousUsedReference && !photo && !photoLoading && (
+            {previousUsedReference && !hasReference && !photoLoading && (
               <label className="mt-3 flex items-start gap-2 text-xs leading-5 text-muted">
                 <input
                   type="checkbox"
@@ -329,8 +374,8 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
           />
           <p className="text-xs leading-5 text-muted">
             Starts from this post’s title, caption and visual idea. Describe the scene, mood, props
-            and layout you want. We always tell AI to preserve an uploaded reference product and
-            make it the main subject, even when you edit this prompt.
+            and layout you want. We always tell AI to preserve the chosen reference product and make
+            it the main subject, even when you edit this prompt.
           </p>
           <FormField
             name={`ai-headline-${index}`}
@@ -393,7 +438,8 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
           </p>
           <p className="text-xs leading-5 text-muted">
             Generating sends this product photo, public product details and campaign text to deAPI.
-            The original photo is not stored in your account. Editing fields needs a new generation.
+            Product photos saved in your catalog stay in your account; new uploads here are used
+            only for this generation. Editing fields needs a new generation.
           </p>
         </form>
         <div className="min-w-0">
@@ -470,7 +516,7 @@ export default function AiPosterCard({ campaign, post, index, savedPoster, onSav
           {previousModel && (
             <p className="mt-2 text-xs leading-5 text-muted">
               {previousUsedReference
-                ? 'This job used reference-photo editing. The original upload is not stored.'
+                ? 'This job used reference-photo editing.'
                 : 'This job was generated without a reference photo.'}
             </p>
           )}

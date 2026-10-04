@@ -31,6 +31,11 @@ export function validateAiPoster(body) {
   if (typeof body.requestKey !== 'string' || !/^[a-f\d-]{36}$/i.test(body.requestKey))
     errors.requestKey = 'Reload this page before generating.';
   else data.requestKey = body.requestKey;
+  if (body.useProductPhoto !== undefined && typeof body.useProductPhoto !== 'boolean')
+    errors.useProductPhoto = 'Choose whether to use the saved product photo.';
+  data.useProductPhoto = body.useProductPhoto === true;
+  if (data.useProductPhoto && body.image)
+    errors.image = 'Choose either the saved product photo or a new reference upload.';
   if (body.image !== undefined && body.image !== '') {
     const match =
       typeof body.image === 'string' &&

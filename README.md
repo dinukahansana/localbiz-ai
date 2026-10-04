@@ -165,23 +165,24 @@ No additional API key, paid billing, or environment variables are needed. This f
 browser canvas template and your real product photo; it does not generate AI artwork.
 
 1. Open a saved draft under **Campaigns**, scroll to **Design your next promotion**, and choose **Free photo template**.
-2. Expand a post and upload its product photo (JPG, PNG, or WebP; up to 5 MB and 20 million pixels).
+2. Expand a post and upload its product photo (JPG, PNG, or WebP; up to 5 MB and 20 million pixels),
+   or click **Use saved product photo** if you saved one in the catalog.
 3. Edit the poster headline and call to action, then choose a brand color.
 4. Click **Create poster preview**. Review the center crop and wording. Creating a preview never saves it.
 5. **Download PNG** exports a 1080 × 1080 image, even before saving.
 6. **Save poster** attaches it to that campaign post. Each of the three posts holds one poster;
    **Replace saved poster** replaces that post's existing image. Errors keep the preview available.
-7. Refresh or reopen the campaign to view/download its saved posters. Upload the original photo
-   again if you want to rebuild it. Text edits never automatically rewrite a saved poster.
+7. Refresh or reopen the campaign to view/download its saved posters. Reuse the saved product
+   photo or upload again to rebuild it. Text edits never automatically rewrite a saved poster.
 
-The original photo stays in the browser. Only a saved poster is uploaded to the backend, decoded
+New uploads in the free poster studio stay in the browser. Only a saved poster is uploaded, decoded
 with Sharp, stripped of metadata, and stored privately in the `campaignposters` MongoDB collection.
 Saved images must be valid 1080 × 1080 PNGs no larger than 6 MB. Image downloads require the owner's
 session cookie and are not publicly hosted. Campaign lists contain no image bytes; deleting a
 campaign also removes its posters. Product deletion does not remove a saved campaign's posters.
 
 Saving allows 30 attempts per account per 15 minutes; this in-memory limit resets on server restart.
-The poster endpoints alone accept larger JSON bodies, after checking login. No Google API calls
+Product-photo and poster endpoints accept larger JSON bodies after checking login. No Google API calls
 are made for posters. Storage is deliberately simple for the LovHack MVP; object storage and
 account-wide storage quotas can be added before a wider public launch.
 
@@ -215,13 +216,14 @@ DEAPI_DAILY_LIMIT=20
 ### Generate, review and save
 
 1. Open a saved campaign and choose **AI promotion poster** in **Design your next promotion**.
-2. Upload a clear JPG/PNG/WebP photo of your actual product (up to 5 MB, 20 million pixels).
+2. Keep **Use saved product photo** selected if the product has a catalog photo, or
+   upload a clear JPG/PNG/WebP photo of your actual product (up to 5 MB, 20 million pixels).
    The backend decodes it, strips metadata, and fits the whole photo into a 1024-square reference.
-   It sends this reference to deAPI but does not store the original photo in MongoDB.
-   Wait for **Reference photo ready** before generating. Each post needs its own upload,
-   and refreshing/reopening clears the file selection; select the photo again for a new
-   generation. Checking or saving an existing job does not need another upload.
-   After a reference-based job, a new submission requires a fresh photo selection or
+   It sends this reference to deAPI. Catalog photos stay privately saved; an upload in this
+   studio is not saved as the product photo. Wait for the reference-ready message before
+   generating. Refreshing clears new file selections, while saved catalog photos are reusable.
+   Checking or saving an existing job does not need another upload.
+   After a reference-based job, a new submission requires a saved or freshly uploaded photo or
    an explicit **Generate an imagined concept without the previous photo** choice.
 3. Choose **Premium studio**, **Warm lifestyle**, or **Bold promotion**. Refine the prompt to
    describe the setting, props, colors, light and layout. Keep the headline and call to action short.
@@ -431,6 +433,46 @@ Product fields: `name` (required, 100), `category` (optional, 60),
 `currency` (LKR/USD/EUR/GBP/INR), `imageUrl` (optional HTTP/HTTPS URL, 2048).
 The API stores integer minor units and returns `price` as a two-decimal string.
 IDs and timestamps are server-controlled. PUT replaces editable fields, so send the whole form.
+
+### Product photos
+
+Add or edit a product and choose a JPG, PNG, or WebP from your device. The form previews
+the photo before saving. One photo per product is stored privately in MongoDB alongside
+the product, so it survives a browser refresh and Render redeploy without using local disk.
+Replace it by choosing another file, or use Remove photo and Save product. Cancel leaves
+the saved product unchanged. Editing only text keeps the existing photo.
+
+Uploads are limited to 5 MB and 20 million pixels. The backend decodes still images,
+corrects orientation, preserves their proportions, resizes to fit 1280 × 1280 without
+cropping, strips metadata, and stores a JPEG of at most 2 MB. This MVP stores compressed
+photos, rather than archival originals. Photos share your Atlas storage; move to object
+storage and add catalog pagination before growing beyond a small MVP catalog.
+
+`Image URL` remains an optional direct public image link for card display. It is not a
+file upload, is never fetched by the backend, and cannot be used as an AI reference.
+An uploaded photo takes priority over the link.
+
+POST/PUT `/products` accept an optional `photo` data URL. Omit it to keep the current
+photo, send `null` to remove it, or send a supported data URL to replace it. Photo changes
+and product details save together. Product JSON includes `hasPhoto` and `photoVersion`,
+never photo bytes. GET `/products/:id/photo` returns the owner's JPEG; other accounts
+receive 404. Authentication, database availability and write-origin protections apply.
+
+The campaign AI studio selects **Use saved product photo** when one exists. Generating
+with that option sends the owned saved photo to deAPI as the editing reference. You can
+upload a different reference for an individual post; it does not replace the catalog photo.
+If the selected saved photo has been removed, generation stops before a provider quote or
+submission. The free photo template also offers **Use saved product photo**. Saving a
+product or choosing a photo never starts a paid generation; only Generate AI poster does.
+Photo saves allow 30 attempts per account per 15 minutes; this in-memory limit resets on restart.
+No new environment variables or storage accounts are required. These changes are locally
+verified; they require a commit, push and redeploy before appearing on the live website.
+
+Local verification (October 4, 2026): all 90 tests passed with disposable MongoDB and stubbed
+AI providers. Desktop and 390 × 844 browser checks covered photo creation, edit previews,
+refresh persistence, cancelling removal, saved-reference AI generation/saving/resuming, and
+reuse in the free template. Browser checks used synthetic photos and a simulated image
+provider, with no Atlas writes or real API credits.
 
 Validation errors return 400 with `{ error, fields }`. Invalid IDs return 400;
 missing products return 404. Database unavailability returns 503 with

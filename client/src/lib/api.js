@@ -10,6 +10,7 @@ export async function api(path, options = {}) {
   const {
     timeoutMs = import.meta.env.PROD ? 60000 : 15000,
     responseType = 'json',
+    imageType = 'image/png',
     ...requestOptions
   } = options;
   const controller = new AbortController();
@@ -34,10 +35,10 @@ export async function api(path, options = {}) {
     if (
       response.ok &&
       responseType === 'blob' &&
-      !response.headers.get('content-type')?.startsWith('image/png')
+      !response.headers.get('content-type')?.startsWith(imageType)
     ) {
       throw new Error(
-        'The poster could not be downloaded. The server may be starting; wait a moment and retry.',
+        'The image could not be downloaded. The server may be starting; wait a moment and retry.',
       );
     }
     const data =

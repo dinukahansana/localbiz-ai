@@ -45,6 +45,14 @@ export function createApp({ generateCampaign, imageProvider } = {}) {
     express.json({ limit: '9mb' }),
     createPosterRouter(),
   );
+  app.use(
+    '/api/products',
+    requireDatabase,
+    protectWrites,
+    requireAuth,
+    express.json({ limit: '8mb' }),
+    productsRouter,
+  );
   app.use(express.json({ limit: '100kb' }));
 
   app.use('/api/health', healthRouter);
@@ -57,7 +65,7 @@ export function createApp({ generateCampaign, imageProvider } = {}) {
     requireAuth,
     businessProfileRouter,
   );
-  app.use('/api/products', requireDatabase, protectWrites, requireAuth, productsRouter);
+
   app.use('/api/schedules', requireDatabase, protectWrites, requireAuth, createScheduleRouter());
   app.use(
     '/api/campaigns',
