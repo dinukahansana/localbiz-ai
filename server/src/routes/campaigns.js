@@ -3,6 +3,7 @@ import { rateLimit } from 'express-rate-limit';
 import Campaign from '../models/Campaign.js';
 import CampaignPoster from '../models/CampaignPoster.js';
 import PostSchedule from '../models/PostSchedule.js';
+import PosterGeneration from '../models/PosterGeneration.js';
 import Product from '../models/Product.js';
 import BusinessProfile from '../models/BusinessProfile.js';
 import { validateBrief, validateContent } from '../validation/campaigns.js';
@@ -152,6 +153,7 @@ export default function createCampaignRouter(generate = generateCampaign) {
     });
     if (!campaign) return response.status(404).json({ error: 'Campaign not found.' });
     await CampaignPoster.deleteMany({ campaign: campaign._id, owner: request.user._id });
+    await PosterGeneration.deleteMany({ campaign: campaign._id, owner: request.user._id });
     await PostSchedule.deleteMany({ campaign: campaign._id, owner: request.user._id });
     response.status(204).end();
   });

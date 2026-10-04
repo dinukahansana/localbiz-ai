@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import Campaign from '../models/Campaign.js';
 import CampaignPoster from '../models/CampaignPoster.js';
+import PosterGeneration from '../models/PosterGeneration.js';
 import { normalizePoster, publicPoster, validatePoster } from '../lib/posters.js';
 
 export default function createPosterRouter() {
@@ -57,9 +58,43 @@ export default function createPosterRouter() {
     response.send(Buffer.from(poster.data));
   });
   router.put('/:campaignId/:postIndex', saveLimit, async (request, response) => {
-    const { data, errors } = validatePoster(request.body);
-    if (Object.keys(errors).length)
-      return response.status(400).json({ error: 'Please check your poster.', fields: errors });
+    let data;
+    let source = 'product-photo';
+    let model = '';
+    let generationId = '';
+    if (request.body?.generationId !== undefined) {
+      if (
+        typeof request.body.generationId !== 'string' ||
+        !/^[a-f\d]{24}$/i.test(request.body.generationId)
+      )
+        return response.status(400).json({ error: 'Invalid image preview ID.' });
+      const job = await PosterGeneration.findOne({
+        ...filter(request),
+        _id: request.body.generationId,
+        status: 'done',
+        expiresAt: { $gt: new Date() },
+      }).select('+data');
+      if (!job?.data)
+        return response
+          .status(404)
+          .json({ error: 'Completed image preview not found or expired.' });
+      data = {
+        headline: job.headline,
+        callToAction: job.callToAction,
+        brandColor: job.brandColor,
+        bytes: Buffer.from(job.data),
+      };
+      source = 'deapi';
+      model = job.model;
+      generationId = job._id.toString();
+    } else {
+      const result = validatePoster(request.body);
+      data = result.data;
+      if (Object.keys(result.errors).length)
+        return response
+          .status(400)
+          .json({ error: 'Please check your poster.', fields: result.errors });
+    }
     let bytes;
     try {
       bytes = await normalizePoster(data.bytes);
@@ -76,6 +111,9 @@ export default function createPosterRouter() {
           callToAction: data.callToAction,
           brandColor: data.brandColor,
           data: bytes,
+          source,
+          model,
+          generationId,
         },
       },
       { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true },

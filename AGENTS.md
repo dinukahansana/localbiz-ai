@@ -2,7 +2,7 @@
 
 ## Current scope
 
-This project is the Phase 7 deployment-ready campaign, poster, and content-calendar workspace for LovHack Season 3, by NextStack Studio.
+This project is the Phase 8 AI-poster, campaign, and content-calendar workspace for LovHack Season 3, by NextStack Studio.
 Keep the MVP focused and the JavaScript beginner-readable.
 
 - Keep the React + Vite + Tailwind frontend in `client/`.
@@ -16,6 +16,10 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Keep generation separate from saving. Validate AI output and protect quota with limits.
 - Send only the authenticated business profile, selected product facts, and campaign brief to Gemini.
 - Free branded posters from user-uploaded product photos, private poster storage, and PNG downloads are authorized.
+- deAPI AI promotion posters from editable campaign prompts and optional reference photos are authorized.
+- Keep AI generation asynchronous, separate from saving, and resumable without resubmitting paid calls.
+- Use exact price quotes, persistent app/account credit limits, and server-owned image provenance.
+- Send only owned public product/campaign details and the explicitly uploaded reference to deAPI.
 - Keep poster previews separate from saving. Never fetch arbitrary image URLs on the server.
 - Decode and validate saved PNGs; keep image bytes out of campaign lists and scope access to owners.
 - Private posting plans, date changes, recoverable cancellation, and manual published status are authorized.
@@ -26,7 +30,7 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Build production with npm run build:production so browser requests use the same-origin /api proxy.
 - Keep host URLs exact, production cookies Secure, API replies uncached, and nearest-proxy trust bounded.
 - Live release checks must be recorded separately from local verification. Never claim a prepared deployment is live.
-- Do not add paid AI image generation, background publishing, or social integrations without later authorization.
+- Do not add background publishing, social integrations, or further paid providers without later authorization.
 - Placeholder controls must be disabled and visibly described as coming soon.
 - Do not present invented analytics, campaigns, products, or user accounts as real data.
 
@@ -56,7 +60,7 @@ Keep the MVP focused and the JavaScript beginner-readable.
 - Never log passwords or tokens, or store session credentials in localStorage.
 - Before deployment, configure HTTPS, same-site frontend/API routing, and trusted proxy behavior.
 - Tests must use a disposable MongoDB instance and never the developer's Atlas database.
-- Automated tests must stub Gemini and never use the developer's key. Live checks use synthetic data.
+- Automated tests must stub Gemini/deAPI and never use the developer's keys. Live checks use synthetic data.
 
 ## Verification
 

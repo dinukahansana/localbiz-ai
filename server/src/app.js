@@ -12,8 +12,9 @@ import authRouter from './routes/auth.js';
 import createCampaignRouter from './routes/campaigns.js';
 import createPosterRouter from './routes/campaignPosters.js';
 import createScheduleRouter from './routes/schedules.js';
+import createGenerationRouter from './routes/posterGenerations.js';
 
-export function createApp({ generateCampaign } = {}) {
+export function createApp({ generateCampaign, imageProvider } = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', env.trustProxyHops);
@@ -27,6 +28,14 @@ export function createApp({ generateCampaign } = {}) {
   });
   app.use(cors({ origin: env.clientOrigins, credentials: true }));
   app.use(cookieParser());
+  app.use(
+    '/api/poster-generations',
+    requireDatabase,
+    protectWrites,
+    requireAuth,
+    express.json({ limit: '9mb' }),
+    createGenerationRouter(imageProvider),
+  );
   // Only authenticated poster uploads need the larger body limit.
   app.use(
     '/api/campaign-posters',

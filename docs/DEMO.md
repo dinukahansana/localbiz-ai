@@ -2,12 +2,17 @@
 
 Suggested length: about three minutes. Check the competition's actual video/time requirements.
 Use a dedicated demo account, a business example with public facts, and an owned product photo.
-Never show the terminal environment, Atlas URI, Gemini key, password entry, or hosting secrets.
+Never show the terminal environment, Atlas URI, Gemini/deAPI keys, password entry, or hosting secrets.
 
 ## Story
 
 LocalBiz AI helps a small business turn its product information into a marketing draft,
-a branded product-photo poster, and a practical posting plan in one workspace.
+a promotional poster, and a practical posting plan in one workspace.
+
+Phase 8 adds deAPI AI poster design. Include it in the final demo only after a real provider
+generation and deployed save/download check pass. Until then, the existing free photo
+template remains the verified live poster feature. Never present a simulated test image
+as real deAPI output or claim AI-designed imagery was tested before it was.
 
 ## Walkthrough
 
@@ -24,6 +29,12 @@ a branded product-photo poster, and a practical posting plan in one workspace.
 Generate once while recording if quota and connectivity allow. Otherwise explicitly describe
 the draft as a previously generated and saved example; do not pretend that opening it was a
 fresh AI generation. Keep a downloaded PNG and saved draft ready as presentation fallbacks.
+
+After verifying Phase 8, replace the 1:20–2:00 segment with **AI promotion poster**:
+show the owned product reference, creative prompt based on the post title/caption, style,
+and a real deAPI result. Explain that deAPI designs the scene/composition and uses credits;
+review packaging and text before saving/downloading. A previously saved real AI result is
+fine if clearly described. Keep the free template visible as an optional alternative.
 
 ## Suggested screenshot set
 

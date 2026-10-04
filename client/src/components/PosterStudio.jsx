@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, ImagePlus, LoaderCircle, Save } from 'lucide-react';
 import FormField from './FormField.jsx';
 import LoadState from './LoadState.jsx';
+import AiPosterCard from './AiPosterCard.jsx';
 import useResource from '../hooks/useResource.js';
 import { api, apiUrl } from '../lib/api.js';
 import { createPoster, readProductPhoto } from '../lib/posterCanvas.js';
 
-function PosterCard({ campaign, post, index, savedPoster, onSaved }) {
+function PhotoPosterCard({ campaign, post, index, savedPoster, onSaved }) {
   const [form, setForm] = useState({
     headline: savedPoster?.headline || post.angle.slice(0, 90),
     callToAction: savedPoster?.callToAction || post.callToAction.slice(0, 80),
@@ -254,6 +255,8 @@ function PosterCard({ campaign, post, index, savedPoster, onSaved }) {
 
 export default function PosterStudio({ campaign }) {
   const resource = useResource(`/campaign-posters/${campaign.id}`);
+  const config = useResource('/poster-generations/config');
+  const [mode, setMode] = useState('ai');
   function saved(poster) {
     resource.replace({
       posters: [
@@ -265,34 +268,57 @@ export default function PosterStudio({ campaign }) {
   return (
     <section className="panel mt-6 p-5 sm:p-6" aria-labelledby="poster-heading">
       <div className="mb-5">
-        <span className="badge">FREE PHOTO POSTERS</span>
+        <span className="badge">PROMOTION STUDIO</span>
         <h2 id="poster-heading" className="mt-3 text-xl font-semibold">
-          Give your posts a picture
+          Design your next promotion
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-          Turn your own product photo into a branded square poster. Review the preview before saving
-          or downloading. Saved posters stay private to your account.
+          Create an AI-designed product scene and promotional poster from your campaign text and
+          reference photo. Preview, save and download a square image ready for manual sharing. Saved
+          posters stay private to your account.
         </p>
+        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Poster creation method">
+          <button
+            type="button"
+            aria-pressed={mode === 'ai'}
+            className={mode === 'ai' ? 'button-primary' : 'button-secondary'}
+            onClick={() => setMode('ai')}
+          >
+            AI promotion poster
+          </button>
+          <button
+            type="button"
+            aria-pressed={mode === 'photo'}
+            className={mode === 'photo' ? 'button-primary' : 'button-secondary'}
+            onClick={() => setMode('photo')}
+          >
+            Free photo template
+          </button>
+        </div>
       </div>
       <LoadState resource={resource} label="posters" />
+      {mode === 'ai' && <LoadState resource={config} label="AI poster setup" />}
       {resource.data && (
         <div className="space-y-4">
-          {campaign.posts.map((post, index) => (
-            <PosterCard
-              key={index}
-              campaign={campaign}
-              post={post}
-              index={index}
-              savedPoster={resource.data.posters.find((item) => item.postIndex === index)}
-              onSaved={saved}
-            />
-          ))}
+          {campaign.posts.map((post, index) => {
+            const Card = mode === 'ai' ? AiPosterCard : PhotoPosterCard;
+            return (
+              <Card
+                key={index}
+                campaign={campaign}
+                post={post}
+                index={index}
+                savedPoster={resource.data.posters.find((item) => item.postIndex === index)}
+                onSaved={saved}
+                config={config.data}
+              />
+            );
+          })}
         </div>
       )}
       <p className="mt-5 text-xs leading-5 text-muted">
-        Posters use the saved business and product names. Caption edits do not change a saved
-        poster; create and save a replacement when needed. Upload the photo again to rebuild after
-        reopening.
+        Caption edits do not change an existing image. Create and save a replacement when needed. AI
+        generation uses deAPI credits; the free photo template creates a layout in your browser.
       </p>
     </section>
   );

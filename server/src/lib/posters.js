@@ -61,7 +61,9 @@ export function publicPoster(poster) {
     brandColor: poster.brandColor,
     width: 1080,
     height: 1080,
-    source: 'product-photo',
+    source: poster.source || 'product-photo',
+    model: poster.model || '',
+    generationId: poster.generationId || '',
     updatedAt: poster.updatedAt,
   };
 }

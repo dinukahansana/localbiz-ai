@@ -1,6 +1,6 @@
 # LocalBiz AI
 
-**LovHack Season 3 — Phase 7**, by **NextStack Studio**.
+**LovHack Season 3 — Phase 8**, by **NextStack Studio**.
 A responsive React workspace for local businesses, with an Express API and MongoDB persistence.
 
 Deployment preparation: [Vercel + Render setup](docs/DEPLOYMENT.md),
@@ -29,7 +29,9 @@ The deployment configuration is prepared; the live release must be verified sepa
 - Production builds use a same-origin `/api` proxy, with Vercel deep-link routing and a Render service blueprint.
 - Production environment validation, bounded proxy trust, readiness health checks, and uncached API responses.
 
-Paid AI image generation, automatic publishing, and social integrations are later phases.
+- Create AI promotion posters with deAPI using campaign text, an editable creative prompt and an optional reference photo.
+
+Automatic publishing and social integrations are later phases.
 Email verification, password reset, OAuth, MFA, and account deletion are not included yet.
 
 Existing shared Phase 2 records remain unchanged in Atlas, but are hidden from new accounts
@@ -162,7 +164,7 @@ References: [Gemini API keys](https://ai.google.dev/gemini-api/docs/api-key),
 No additional API key, paid billing, or environment variables are needed. This feature uses a
 browser canvas template and your real product photo; it does not generate AI artwork.
 
-1. Open a saved draft under **Campaigns** and scroll to **Give your posts a picture**.
+1. Open a saved draft under **Campaigns**, scroll to **Design your next promotion**, and choose **Free photo template**.
 2. Expand a post and upload its product photo (JPG, PNG, or WebP; up to 5 MB and 20 million pixels).
 3. Edit the poster headline and call to action, then choose a brand color.
 4. Click **Create poster preview**. Review the center crop and wording. Creating a preview never saves it.
@@ -182,6 +184,107 @@ Saving allows 30 attempts per account per 15 minutes; this in-memory limit reset
 The poster endpoints alone accept larger JSON bodies, after checking login. No Google API calls
 are made for posters. Storage is deliberately simple for the LovHack MVP; object storage and
 account-wide storage quotas can be added before a wider public launch.
+
+## Create AI promotion posters (Phase 8)
+
+This mode asks deAPI to design the full product scene, background, lighting, composition and
+typography. It uses the selected saved post's title/caption and your owned product description,
+plus an editable creative prompt. It does not use the browser photo template or pretend that a
+template is AI artwork. You can still choose **Free photo template** without an API key.
+
+### deAPI setup
+
+1. Create an account at [deAPI](https://app.deapi.ai). Its
+   [quickstart](https://docs.deapi.ai/quickstart) currently advertises a $5 welcome bonus for
+   Basic accounts without a card. Check your own dashboard balance and model access.
+2. Open **Dashboard → Settings → API Keys → Create new secret key**.
+3. Add these values to your existing local `server/.env`; keep your MongoDB/Gemini settings:
+
+```dotenv
+DEAPI_API_KEY=your_private_key_here
+DEAPI_MAX_PRICE=0.05
+DEAPI_DAILY_LIMIT=20
+```
+
+4. Restart your VS Code backend. From the project root use `npm run dev` if both servers are stopped.
+   Never put this key in `client/.env`, a `VITE_` variable, Git, screenshots or chat.
+5. For production, add the same three variables in **Render → Environment** and redeploy the
+   backend code. Deploy the updated frontend code to Vercel too. Adding the key alone does not
+   deploy this feature. Existing Gemini text generation uses its separate key.
+
+### Generate, review and save
+
+1. Open a saved campaign and choose **AI promotion poster** in **Design your next promotion**.
+2. Upload a clear JPG/PNG/WebP photo of your actual product (up to 5 MB, 20 million pixels).
+   The backend decodes it, strips metadata, and fits the whole photo into a 1024-square reference.
+   It sends this reference to deAPI but does not store the original photo in MongoDB.
+   Wait for **Reference photo ready** before generating. Each post needs its own upload,
+   and refreshing/reopening clears the file selection; select the photo again for a new
+   generation. Checking or saving an existing job does not need another upload.
+   After a reference-based job, a new submission requires a fresh photo selection or
+   an explicit **Generate an imagined concept without the previous photo** choice.
+3. Choose **Premium studio**, **Warm lifestyle**, or **Bold promotion**. Refine the prompt to
+   describe the setting, props, colors, light and layout. Keep the headline and call to action short.
+   New default prompts ask AI to use an uploaded reference as the main subject. The server
+   always starts reference-photo requests with product-preservation instructions, even for
+   an edited or older prompt. Your creative brief controls the scene; generic caption ideas
+   should not replace the reference product. These instructions improve guidance but cannot
+   guarantee exact product details or correctly spelled text.
+4. Click **Generate AI poster**. deAPI credits are used for each new generation. Progress is
+   checked through a private saved job, so reopening the campaign resumes it without buying again.
+5. Review product identity, packaging, spelling, claims and composition. AI redraws pixels and
+   can change details or render English/Sinhala/Tamil text incorrectly. A reference improves
+   guidance; it does not guarantee an exact copy. Without a photo, the product is imagined.
+6. Download the 1080-square PNG preview, or **Save AI poster**. Saving uses the actual completed
+   server-owned job bytes. It replaces this post's one saved image only after you choose to save.
+   Unsaved previews expire after 48 hours; saved posters remain with the campaign.
+7. Copy the caption and manually upload it with the PNG to Facebook or Instagram. This feature
+   never publishes automatically. Changing caption/prompt fields does not rewrite an existing image.
+
+Photo references use **QwenImageEdit_Plus_NF4** at 20 steps; prompts without a photo use
+**Flux_2_Klein_4B_BF16** at 1024 × 1024, four steps. Output is resized to 1080 square without
+cropping, not generated at native 1080 resolution. Only an exact native-model quote at or below
+`DEAPI_MAX_PRICE` is accepted; the default is 0.05 deAPI credits. Partner models and unavailable
+price estimates are not accepted. The server does not request paid prompt enhancement.
+
+If a generation is blocked by the price limit, the error shows the exact quote and your
+configured limit. No image is submitted or charged at that point. A read-only Qwen 20-step
+quote on October 4, 2026 was 0.0322704 credits, above the original 0.03 starter limit.
+The starter limit is now 0.05; prices can change. An existing `DEAPI_MAX_PRICE=0.03` in
+your local backend environment or Render still takes priority. If you want to allow a
+quote below 0.05, change that setting to `0.05`, then restart/redeploy the backend.
+This is a maximum allowed price per image, not a subscription or a charge by itself.
+Increasing it does not change the model, inference steps, quality settings, or typography.
+The current code uses fixed native models/settings; a different model or higher step count
+requires an implementation change as well as a sufficient price cap. Partner models with
+estimated pricing are not supported by this exact-quote guard.
+
+Persistent MongoDB counters allow five submissions per account per UTC hour and
+`DEAPI_DAILY_LIMIT` submissions across the whole app per UTC day (default 20). These include
+failed/ambiguous submissions after reservation, so deleting a campaign or restarting the API
+cannot reset the credit guard. Provider balances, quotas and refunds are separate. Each account
+can have one active image job; duplicate request keys return that job instead of resubmitting.
+An interrupted submission displays **Check current job**. If submission status is unknown,
+check the deAPI dashboard before deliberately starting another image; there is no automatic retry.
+
+Original references and prompts may be processed/retained by deAPI under its own terms; use
+public product information and images you have permission to share. Accounts, passwords,
+session tokens and product image URLs are never sent. The backend only downloads provider job
+results over HTTPS from the explicit `results.deapi.ai`, `assets.deapi.ai`, `api.deapi.ai`, or
+`media.deapi.ai` host list,
+without redirects or API credentials. An unexpected host fails safely and needs investigation.
+Both temporary previews and saved PNGs require the owning session; lists expose no image bytes.
+Deleting a campaign removes its previews and posters while preserving quota counters.
+
+If a completed job stopped at 95% with **The image host was not recognized**, update and
+restart the backend, then choose **Check current job**. Native deAPI results use
+`results.deapi.ai`, which is now accepted. The existing job is checked/downloaded again;
+this recovery does not submit another generation or use another generation credit.
+
+References: [image editing](https://docs.deapi.ai/api/v2/images/edits),
+[job polling](https://docs.deapi.ai/api/v2/utilities/jobs),
+[exact price quotes](https://docs.deapi.ai/api/v2/images/edits-price), and
+[product fidelity limits](https://deapi.ai/blog/ai-product-photos-via-api-clean-catalog-shots-vs-styled-scenes).
 
 ## Plan posting dates (Phase 6)
 
@@ -282,6 +385,26 @@ Poster endpoints (authenticated, database required):
 `brandColor` (six-digit hex, e.g. `#245b46`), and `image` (PNG base64 data URL, max 6 MB decoded).
 Unknown fields, ownership, IDs, and timestamps are ignored. Foreign/missing campaigns return 404;
 invalid IDs/indexes/images return 400. Oversized JSON returns 413; poster saves can return 429.
+
+AI previews (authenticated, database required):
+
+| Method | Path                                                      | Behavior                                                           |
+| ------ | --------------------------------------------------------- | ------------------------------------------------------------------ |
+| GET    | `/poster-generations/config`                              | Key configured flag and credit limits; never the key               |
+| GET    | `/poster-generations/:campaignId/:postIndex`              | Resume latest temporary job metadata                               |
+| POST   | `/poster-generations/:campaignId/:postIndex`              | Quote, reserve budget, submit once; returns `{ generation }`       |
+| GET    | `/poster-generations/:campaignId/:postIndex/:jobId`       | Check existing provider job and retrieve completed bytes privately |
+| GET    | `/poster-generations/:campaignId/:postIndex/:jobId/image` | Completed private PNG preview                                      |
+
+Submission fields: `requestKey` (browser-generated UUID), `headline`, `callToAction`,
+`brandColor`, `style` (`studio`, `lifestyle`, `bold`), `prompt` (1–2000 characters), and
+optional `image` (JPG/PNG/WebP base64 data URL, max 5 MB decoded). Client-supplied product
+facts/owner/provider/model/URLs are ignored. Only the owned campaign/product is read.
+To save an AI result, PUT `{ generationId }` to the existing campaign-poster endpoint;
+the server selects the completed owned job's bytes/metadata and records `source: deapi`.
+Sending a photo PNG or an invented source cannot forge AI provenance. Expired, foreign
+or wrong-post job IDs cannot be saved. Configuration/provider errors are readable 503/502/504,
+quota errors 429, price/active-job conflicts 409, and invalid prompts/photos 400.
 
 Posting-plan endpoints (authenticated, database required):
 

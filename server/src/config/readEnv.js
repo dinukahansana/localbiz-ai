@@ -1,4 +1,10 @@
 export function readEnv(values) {
+  const deapiMaxPrice = Number(values.DEAPI_MAX_PRICE || 0.05);
+  const deapiDailyLimit = Number(values.DEAPI_DAILY_LIMIT || 20);
+  if (!Number.isFinite(deapiMaxPrice) || deapiMaxPrice <= 0 || deapiMaxPrice > 1)
+    throw new Error('DEAPI_MAX_PRICE must be greater than 0 and at most 1 credit.');
+  if (!Number.isInteger(deapiDailyLimit) || deapiDailyLimit < 1 || deapiDailyLimit > 100)
+    throw new Error('DEAPI_DAILY_LIMIT must be an integer between 1 and 100.');
   const production = values.NODE_ENV === 'production';
   const port = Number(values.PORT || 5000);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -46,5 +52,8 @@ export function readEnv(values) {
     mongoUri: values.MONGODB_URI?.trim() || '',
     geminiKey: values.GEMINI_API_KEY?.trim() || '',
     geminiModel,
+    deapiKey: values.DEAPI_API_KEY?.trim() || '',
+    deapiMaxPrice,
+    deapiDailyLimit,
   };
 }

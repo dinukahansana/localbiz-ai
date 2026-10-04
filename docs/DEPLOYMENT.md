@@ -9,7 +9,7 @@ Use the repository root for both services; this project uses npm workspaces and 
 The visitor opens the Vercel website. Its frontend calls `/api` on that same website.
 Vercel forwards those requests to the Render API using `vercel.mjs`. Session cookies stay
 HttpOnly, Secure, SameSite=Lax, host-only, and scoped to `/api`. No cookie setting needs
-weakening. Gemini keys and database credentials belong only in Render, never Vercel.
+weakening. Gemini/deAPI keys and database credentials belong only in Render, never Vercel.
 
 The production build command is `npm run build:production`. It overrides local development
 API URLs, including an existing `client/.env`, so the deployed app never points to localhost.
@@ -45,16 +45,19 @@ You can instead use **New → Blueprint** with `render.yaml`; do not create both
 
 Add these environment variables in Render:
 
-| Variable           | Value                                                                     |
-| ------------------ | ------------------------------------------------------------------------- |
-| `NODE_ENV`         | `production`                                                              |
-| `NODE_VERSION`     | `24`                                                                      |
-| `HOST`             | `0.0.0.0`                                                                 |
-| `TRUST_PROXY_HOPS` | `1`                                                                       |
-| `CLIENT_URL`       | Your exact HTTPS Vercel production origin, with no path or trailing slash |
-| `MONGODB_URI`      | Your real Atlas Drivers URI, with database `localbiz_ai`                  |
-| `GEMINI_API_KEY`   | Your existing Gemini key                                                  |
-| `GEMINI_MODEL`     | `gemini-3.1-flash-lite`                                                   |
+| Variable            | Value                                                                         |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `NODE_ENV`          | `production`                                                                  |
+| `NODE_VERSION`      | `24`                                                                          |
+| `HOST`              | `0.0.0.0`                                                                     |
+| `TRUST_PROXY_HOPS`  | `1`                                                                           |
+| `CLIENT_URL`        | Your exact HTTPS Vercel production origin, with no path or trailing slash     |
+| `MONGODB_URI`       | Your real Atlas Drivers URI, with database `localbiz_ai`                      |
+| `GEMINI_API_KEY`    | Your existing Gemini key                                                      |
+| `GEMINI_MODEL`      | `gemini-3.1-flash-lite`                                                       |
+| `DEAPI_API_KEY`     | Your private deAPI key; blank disables AI posters and keeps the free template |
+| `DEAPI_MAX_PRICE`   | `0.05` (maximum exact quote in deAPI credits per image)                       |
+| `DEAPI_DAILY_LIMIT` | `20` (shared app submissions per UTC day)                                     |
 
 Render sets `PORT` for the service; do not copy your local port or local `CLIENT_URL` here.
 If Vercel has not assigned the frontend origin yet, temporarily use `https://setup.invalid`
